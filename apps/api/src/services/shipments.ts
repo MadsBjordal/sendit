@@ -231,24 +231,20 @@ export async function createShipment(
         instructions: p.instructions ?? null,
       });
     }
-    await tx
-      .insert(cargoLines)
-      .values(
-        input.cargo.lines.map((l, position) => ({
-          ...l,
-          shipmentId: id,
-          position,
-          description: l.description ?? null,
-        })),
-      );
-    await tx
-      .insert(priceSnapshots)
-      .values({
+    await tx.insert(cargoLines).values(
+      input.cargo.lines.map((l, position) => ({
+        ...l,
         shipmentId: id,
-        kind: 'estimate',
-        pricingVersion: q.pricing.version,
-        breakdown: q.estimate,
-      });
+        position,
+        description: l.description ?? null,
+      })),
+    );
+    await tx.insert(priceSnapshots).values({
+      shipmentId: id,
+      kind: 'estimate',
+      pricingVersion: q.pricing.version,
+      breakdown: q.estimate,
+    });
     await tx.insert(payments).values(payment.row);
     await shipmentEvent(tx, id, 'shipment.created', actor, {
       serviceLevel: input.serviceLevel,

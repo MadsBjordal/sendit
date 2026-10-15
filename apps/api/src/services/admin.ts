@@ -176,15 +176,13 @@ export async function createPricing(
         .update(pricingConfigurations)
         .set({ active: false })
         .where(eq(pricingConfigurations.active, true));
-    await tx
-      .insert(pricingConfigurations)
-      .values({
-        version: cfg.version,
-        config: cfg,
-        active: activate,
-        note,
-        createdBy: actor.userId,
-      });
+    await tx.insert(pricingConfigurations).values({
+      version: cfg.version,
+      config: cfg,
+      active: activate,
+      note,
+      createdBy: actor.userId,
+    });
     await audit(tx, actor, 'pricing.created', { type: 'pricing', id: cfg.version }, { activate });
   });
 }

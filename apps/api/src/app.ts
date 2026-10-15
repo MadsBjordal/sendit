@@ -92,12 +92,10 @@ export async function buildApp(
       err: String(err),
       stack: (err as Error).stack,
     });
-    return reply
-      .code(500)
-      .send({
-        error: 'server_error',
-        message: 'Something went wrong on our side. Please try again.',
-      });
+    return reply.code(500).send({
+      error: 'server_error',
+      message: 'Something went wrong on our side. Please try again.',
+    });
   });
 
   authRoutes(app, ctx);

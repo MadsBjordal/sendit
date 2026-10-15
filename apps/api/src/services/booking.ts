@@ -213,16 +213,14 @@ export async function acceptLoad(
       const s = await lockShipment(tx, shipmentId);
       if (!s) throw notFound();
       const result = await decide(ctx, tx, actor, s, input);
-      await tx
-        .insert(acceptAttempts)
-        .values({
-          shipmentId,
-          carrierOrgId: actor.orgId,
-          userId: actor.userId,
-          idempotencyKey: input.idempotencyKey,
-          result: result.result,
-          response: result,
-        });
+      await tx.insert(acceptAttempts).values({
+        shipmentId,
+        carrierOrgId: actor.orgId,
+        userId: actor.userId,
+        idempotencyKey: input.idempotencyKey,
+        result: result.result,
+        response: result,
+      });
       return result;
     });
   } catch (err) {
@@ -276,14 +274,12 @@ async function decide(
     s.taxContext as TaxContext,
     s.pricingSnapshot as PricingConfig,
   );
-  await tx
-    .insert(priceSnapshots)
-    .values({
-      shipmentId: s.id,
-      kind: 'acceptance',
-      pricingVersion: s.pricingVersion,
-      breakdown: { ...price, carrierOrgId: actor.orgId },
-    });
+  await tx.insert(priceSnapshots).values({
+    shipmentId: s.id,
+    kind: 'acceptance',
+    pricingVersion: s.pricingVersion,
+    breakdown: { ...price, carrierOrgId: actor.orgId },
+  });
 
   if (price.totalMinor <= s.maxPriceMinor) {
     if (s.fundedMinor < price.totalMinor)
@@ -411,14 +407,12 @@ async function finaliseBooking(
     .update(payments)
     .set({ status: 'cancelled', updatedAt: now })
     .where(and(eq(payments.shipmentId, s.id), eq(payments.status, 'pending')));
-  await tx
-    .insert(priceSnapshots)
-    .values({
-      shipmentId: s.id,
-      kind: 'booking',
-      pricingVersion: s.pricingVersion,
-      breakdown: a.price,
-    });
+  await tx.insert(priceSnapshots).values({
+    shipmentId: s.id,
+    kind: 'booking',
+    pricingVersion: s.pricingVersion,
+    breakdown: a.price,
+  });
 
   // Money: the customer's prepaid funds become what we owe the carrier, our (deferred) fee and VAT
   await post(

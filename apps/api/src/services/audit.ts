@@ -32,13 +32,11 @@ export async function shipmentEvent(
   actor: Actor,
   data: object = {},
 ) {
-  await db
-    .insert(shipmentEvents)
-    .values({
-      shipmentId,
-      kind,
-      actorUserId: actor.userId ?? null,
-      actorOrgId: actor.orgId ?? null,
-      data,
-    });
+  await db.insert(shipmentEvents).values({
+    shipmentId,
+    kind,
+    actorUserId: actor.userId ?? null,
+    actorOrgId: actor.orgId ?? null,
+    data,
+  });
 }

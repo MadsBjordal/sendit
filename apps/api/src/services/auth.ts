@@ -73,14 +73,12 @@ async function sendEmailToken(
 ) {
   const token = newToken();
   const hours = kind === 'verify_email' ? 72 : 1;
-  await db
-    .insert(userTokens)
-    .values({
-      userId: user.id,
-      kind,
-      tokenHash: sha256(token),
-      expiresAt: new Date(ctx.now().getTime() + hours * 3_600_000),
-    });
+  await db.insert(userTokens).values({
+    userId: user.id,
+    kind,
+    tokenHash: sha256(token),
+    expiresAt: new Date(ctx.now().getTime() + hours * 3_600_000),
+  });
   const link = `${ctx.config.publicUrl}/${kind === 'verify_email' ? 'verify-email' : 'reset-password'}?token=${token}`;
   const brand = ctx.config.brand.name;
   await ctx.email.send(db, {

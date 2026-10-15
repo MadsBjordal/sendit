@@ -77,14 +77,12 @@ export async function post(
   if (!row) return false;
   for (const l of nonZero) {
     const account = await accountId(db, l.account, l.orgId ?? null, tx.currency);
-    await db
-      .insert(ledgerEntries)
-      .values({
-        transactionId: row.id,
-        accountId: account,
-        amountMinor: l.amountMinor,
-        currency: tx.currency,
-      });
+    await db.insert(ledgerEntries).values({
+      transactionId: row.id,
+      accountId: account,
+      amountMinor: l.amountMinor,
+      currency: tx.currency,
+    });
   }
   return true;
 }
