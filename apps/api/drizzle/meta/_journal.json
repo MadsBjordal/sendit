@@ -15,6 +15,20 @@
       "when": 1792088831913,
       "tag": "0001_ledger_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792092728604,
+      "tag": "0002_conveniences",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792093052544,
+      "tag": "0003_carrier_operations",
+      "breakpoints": true
     }
   ]
 }

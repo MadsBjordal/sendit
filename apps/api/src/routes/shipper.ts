@@ -11,7 +11,14 @@ import {
   customerShipments,
   quote,
   retryPayment,
+  shipmentTemplate,
 } from '../services/shipments';
+import {
+  deleteAddress,
+  listAddresses,
+  saveAddress,
+  savedAddressSchema,
+} from '../services/addresses';
 import { assertRouteOpen } from '../services/platformConfig';
 
 export function shipperRoutes(app: FastifyInstance, ctx: Ctx) {
@@ -76,6 +83,41 @@ export function shipperRoutes(app: FastifyInstance, ctx: Ctx) {
     const a = member(req, { kind: 'shipper', permission: 'shipments.view' });
     const { id } = parse(uuidParam, req.params);
     return customerShipment(ctx, a.orgId, id);
+  });
+
+  app.get(
+    '/api/shipments/:id/template',
+    { schema: { tags: ['shipper'], summary: 'Book again: the same places, cargo and service' } },
+    async (req) => {
+      const a = member(req, { kind: 'shipper', permission: 'shipments.create' });
+      const { id } = parse(uuidParam, req.params);
+      return shipmentTemplate(ctx, a.orgId, id);
+    },
+  );
+
+  app.get(
+    '/api/addresses',
+    { schema: { tags: ['shipper'], summary: 'Saved places' } },
+    async (req) => {
+      const a = member(req, { kind: 'shipper' });
+      return listAddresses(ctx, a.orgId);
+    },
+  );
+
+  app.post(
+    '/api/addresses',
+    { schema: { tags: ['shipper'], body: doc(savedAddressSchema) } },
+    async (req) => {
+      const a = member(req, { kind: 'shipper', permission: 'shipments.create' });
+      return saveAddress(ctx, a, parse(savedAddressSchema, req.body));
+    },
+  );
+
+  app.delete('/api/addresses/:id', { schema: { tags: ['shipper'] } }, async (req) => {
+    const a = member(req, { kind: 'shipper', permission: 'shipments.create' });
+    const { id } = parse(uuidParam, req.params);
+    await deleteAddress(ctx, a, id);
+    return { ok: true };
   });
 
   app.post(

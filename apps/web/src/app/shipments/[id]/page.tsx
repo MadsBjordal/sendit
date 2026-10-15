@@ -369,6 +369,11 @@ export default function ShipmentPage() {
           <p className="mt-1 text-xs text-ink-faint">{t('detail.cancelNote')}</p>
         </div>
       )}
+      <div>
+        <Link href={`/book?repeat=${s.id}`} className="btn-secondary">
+          {t('detail.bookAgain')}
+        </Link>
+      </div>
     </div>
   );
 }

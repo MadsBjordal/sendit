@@ -1,13 +1,13 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { parseMajor } from '@freight/shared';
 import { AddressSearch, type Place } from '@/components/AddressSearch';
 import { useRequireAuth } from '@/components/auth';
 import { RouteMap } from '@/components/RouteMap';
 import { Alert, Badge, Card, ErrorText, Field, Spinner } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
-import { post } from '@/lib/api';
+import { api, post } from '@/lib/api';
 import { km, money } from '@/lib/format';
 
 type Level = 'standard' | 'priority' | 'express';
@@ -60,7 +60,7 @@ function addDays(d: number) {
 }
 const toIso = (date: string, time: string) => new Date(`${date}T${time}`).toISOString();
 
-export default function Book() {
+function BookForm() {
   const { me, loading } = useRequireAuth('shipper');
   const { t, locale } = useI18n();
   const router = useRouter();
@@ -116,6 +116,104 @@ export default function Book() {
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
+  const params = useSearchParams();
+  const [saved, setSaved] = useState<
+    Array<
+      Place & {
+        id: string;
+        contactName: string | null;
+        contactPhone: string | null;
+        hasForklift: boolean;
+        hasLoadingDock: boolean;
+        instructions: string | null;
+      }
+    >
+  >([]);
+  const [savePlaces, setSavePlaces] = useState(false);
+
+  useEffect(() => {
+    if (!me) return;
+    api('/api/addresses')
+      .then(setSaved)
+      .catch(() => {});
+    const repeat = params.get('repeat');
+    if (!repeat) return;
+    // Book again: same places, cargo, service and maximum; new dates
+    api(`/api/shipments/${repeat}/template`)
+      .then((tpl) => {
+        const toPlace = (p: Record<string, unknown>) => ({
+          ...(p as unknown as Place),
+          source: 'saved',
+        });
+        setFrom(toPlace(tpl.pickup));
+        setTo(toPlace(tpl.delivery));
+        setDescription(tpl.cargo.description ?? '');
+        setLines(tpl.cargo.lines);
+        setLevel(tpl.serviceLevel);
+        setPickupFrom(tpl.pickup.fromTime);
+        setPickupTo(tpl.pickup.toTime);
+        setDeliveryFrom(tpl.delivery.fromTime);
+        setDeliveryTo(tpl.delivery.toTime);
+        setMaxText(String(tpl.maxPriceMinor / 100));
+        setMaxTouched(true);
+        setExtra((e) => ({
+          ...e,
+          pickupContact: tpl.pickup.contactName ?? '',
+          pickupPhone: tpl.pickup.contactPhone ?? '',
+          pickupForklift: tpl.pickup.hasForklift,
+          pickupDock: tpl.pickup.hasLoadingDock,
+          pickupNotes: tpl.pickup.instructions ?? '',
+          deliveryContact: tpl.delivery.contactName ?? '',
+          deliveryPhone: tpl.delivery.contactPhone ?? '',
+          deliveryForklift: tpl.delivery.hasForklift,
+          deliveryDock: tpl.delivery.hasLoadingDock,
+          deliveryNotes: tpl.delivery.instructions ?? '',
+          reference: tpl.reference ?? '',
+          goodsStatus: tpl.cargo.goodsStatus ?? 'unknown',
+          category: tpl.cargo.category ?? 'general',
+          tailLiftPickup: !!tpl.cargo.needsTailLiftPickup,
+          tailLiftDelivery: !!tpl.cargo.needsTailLiftDelivery,
+          cold: !!tpl.cargo.temperature,
+          minC: String(tpl.cargo.temperature?.minC ?? 2),
+          maxC: String(tpl.cargo.temperature?.maxC ?? 8),
+        }));
+      })
+      .catch(() => {});
+  }, [me, params]);
+
+  const pickSaved = (which: 'from' | 'to', a: (typeof saved)[number]) => {
+    const p: Place = {
+      label: `${a.label}: ${a.addressLine}, ${a.postcode} ${a.city}, ${a.country}`,
+      addressLine: a.addressLine,
+      postcode: a.postcode,
+      city: a.city,
+      country: a.country,
+      lat: a.lat,
+      lng: a.lng,
+      source: 'saved',
+    };
+    if (which === 'from') {
+      setFrom(p);
+      setExtra((e) => ({
+        ...e,
+        pickupContact: a.contactName ?? '',
+        pickupPhone: a.contactPhone ?? '',
+        pickupForklift: a.hasForklift,
+        pickupDock: a.hasLoadingDock,
+        pickupNotes: a.instructions ?? '',
+      }));
+    } else {
+      setTo(p);
+      setExtra((e) => ({
+        ...e,
+        deliveryContact: a.contactName ?? '',
+        deliveryPhone: a.contactPhone ?? '',
+        deliveryForklift: a.hasForklift,
+        deliveryDock: a.hasLoadingDock,
+        deliveryNotes: a.instructions ?? '',
+      }));
+    }
+  };
 
   const quoteBody = useMemo(() => {
     if (!from || !to || lines.some((l) => !l.quantity || !l.weightKg)) return null;
@@ -209,6 +307,25 @@ export default function Book() {
         maxPriceMinor: maxMinor,
         reference: extra.reference || null,
       });
+      if (savePlaces)
+        for (const [p, k] of [
+          [from, 'pickup'],
+          [to, 'delivery'],
+        ] as const)
+          await post('/api/addresses', {
+            label: p.city,
+            addressLine: p.addressLine,
+            postcode: p.postcode,
+            city: p.city,
+            country: p.country,
+            lat: p.lat,
+            lng: p.lng,
+            contactName: (k === 'pickup' ? extra.pickupContact : extra.deliveryContact) || null,
+            contactPhone: (k === 'pickup' ? extra.pickupPhone : extra.deliveryPhone) || null,
+            hasForklift: k === 'pickup' ? extra.pickupForklift : extra.deliveryForklift,
+            hasLoadingDock: k === 'pickup' ? extra.pickupDock : extra.deliveryDock,
+            instructions: (k === 'pickup' ? extra.pickupNotes : extra.deliveryNotes) || null,
+          }).catch(() => {});
       router.push(`/pay/${res.payment.paymentRef}?shipment=${res.id}`);
     } catch (e) {
       setError(e);
@@ -247,6 +364,7 @@ export default function Book() {
               placeholder={t('book.searchAddress')}
             />
           </Field>
+          <SavedChips list={saved} onPick={(x) => pickSaved('from', x)} />
           <Field
             label={
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
@@ -261,6 +379,17 @@ export default function Book() {
               placeholder={t('book.searchAddress')}
             />
           </Field>
+          <SavedChips list={saved} onPick={(x) => pickSaved('to', x)} />
+          {from && to && (from.source !== 'saved' || to.source !== 'saved') && (
+            <label className="flex gap-2 text-sm text-ink-soft">
+              <input
+                type="checkbox"
+                checked={savePlaces}
+                onChange={(e) => setSavePlaces(e.target.checked)}
+              />
+              {t('book.savePlaces')}
+            </label>
+          )}
         </Card>
 
         <Card className="space-y-4">
@@ -702,5 +831,39 @@ export default function Book() {
         </Card>
       </aside>
     </div>
+  );
+}
+
+function SavedChips<T extends { id: string; label: string; city: string }>({
+  list,
+  onPick,
+}: {
+  list: T[];
+  onPick(a: T): void;
+}) {
+  const { t } = useI18n();
+  if (list.length === 0) return null;
+  return (
+    <div className="-mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="text-xs text-ink-faint">{t('book.savedPlaces')}</span>
+      {list.slice(0, 6).map((a) => (
+        <button
+          key={a.id}
+          type="button"
+          onClick={() => onPick(a)}
+          className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs hover:border-brand"
+        >
+          {a.label === a.city ? a.city : `${a.label} · ${a.city}`}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function Book() {
+  return (
+    <Suspense>
+      <BookForm />
+    </Suspense>
   );
 }

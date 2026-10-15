@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Ctx } from '../context';
-import { notifications } from '../db/schema';
+import { notifications, users } from '../db/schema';
+import { EMAIL_KINDS } from '../services/notifications';
 import { AppError, badRequest, unauthorised } from '../lib/errors';
 import { parse } from '../lib/http';
 import { handleWebhook } from '../services/payments';
@@ -61,6 +62,44 @@ export function miscRoutes(app: FastifyInstance, ctx: Ctx) {
       .where(and(eq(notifications.userId, req.session.user.id), isNull(notifications.readAt)));
     return { ok: true };
   });
+
+  app.get('/api/me/settings', { schema: { tags: ['platform'] } }, async (req) => {
+    if (!req.session) throw unauthorised();
+    const [u] = await ctx.db.select().from(users).where(eq(users.id, req.session.user.id));
+    return {
+      locale: u!.locale,
+      notificationPrefs: u!.notificationPrefs,
+      emailKinds: Object.keys(EMAIL_KINDS),
+    };
+  });
+
+  app.put(
+    '/api/me/settings',
+    {
+      schema: {
+        tags: ['platform'],
+        summary: 'Language and which notifications also come by email',
+      },
+    },
+    async (req) => {
+      if (!req.session) throw unauthorised();
+      const input = parse(
+        z.object({
+          locale: z.enum(['en', 'de', 'pl', 'fr', 'es', 'it', 'nl']),
+          notificationPrefs: z.record(
+            z.enum(Object.keys(EMAIL_KINDS) as [string, ...string[]]),
+            z.object({ email: z.boolean() }),
+          ),
+        }),
+        req.body,
+      );
+      await ctx.db
+        .update(users)
+        .set({ locale: input.locale, notificationPrefs: input.notificationPrefs })
+        .where(eq(users.id, req.session.user.id));
+      return { ok: true };
+    },
+  );
 
   // Payment provider webhooks: no session, no CSRF header; the signature is the authentication
   app.post(

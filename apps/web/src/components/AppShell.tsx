@@ -12,6 +12,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/book', key: 'nav.book' },
     { href: '/shipments', key: 'nav.shipments' },
     { href: '/team', key: 'nav.team' },
+    { href: '/settings', key: 'nav.settings' },
   ],
   carrier: [
     { href: '/carrier/loads', key: 'nav.loads' },
@@ -19,6 +20,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/carrier/fleet', key: 'nav.fleet' },
     { href: '/carrier/verification', key: 'nav.verification' },
     { href: '/team', key: 'nav.team' },
+    { href: '/settings', key: 'nav.settings' },
   ],
   staff: [{ href: '/admin', key: 'nav.admin' }],
 };
@@ -98,9 +100,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LanguageSelect />
             {me && (
               <>
-                <span
-                  className="relative hidden text-sm text-ink-soft sm:inline"
+                <Link
+                  href="/notifications"
+                  className="relative px-1 text-sm text-ink-soft"
                   title={t('common.notifications')}
+                  aria-label={t('common.notifications')}
                 >
                   🔔
                   {unread > 0 && (
@@ -108,8 +112,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {unread}
                     </span>
                   )}
-                </span>
-                <span className="hidden text-sm text-ink-soft lg:inline">{me.org?.name}</span>
+                </Link>
+                <Link
+                  href="/settings"
+                  className="hidden text-sm text-ink-soft hover:text-ink lg:inline"
+                  title={t('nav.settings')}
+                >
+                  {me.org?.name ?? me.user.name}
+                </Link>
                 <button onClick={logout} className="btn-ghost px-2 py-1 text-sm">
                   {t('auth.logout')}
                 </button>

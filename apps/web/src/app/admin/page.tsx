@@ -15,7 +15,7 @@ import { useI18n, type MessageKey } from '@/i18n';
 import { api, ApiError, post } from '@/lib/api';
 import { date, dateTime, money } from '@/lib/format';
 
-type Tab = 'organisations' | 'shipments' | 'countries' | 'finance' | 'audit';
+type Tab = 'organisations' | 'shipments' | 'countries' | 'pricing' | 'finance' | 'audit';
 
 export default function Admin() {
   const { me, refresh } = useRequireAuth();
@@ -28,19 +28,22 @@ export default function Admin() {
     <div>
       <PageTitle title={t('nav.admin')} />
       <div className="mb-5 flex flex-wrap gap-1 border-b border-slate-200">
-        {(['organisations', 'shipments', 'countries', 'finance', 'audit'] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${tab === k ? 'border-brand text-brand' : 'border-transparent text-ink-soft'}`}
-          >
-            {t(`admin.tab.${k}` as MessageKey)}
-          </button>
-        ))}
+        {(['organisations', 'shipments', 'countries', 'pricing', 'finance', 'audit'] as const).map(
+          (k) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${tab === k ? 'border-brand text-brand' : 'border-transparent text-ink-soft'}`}
+            >
+              {t(`admin.tab.${k}` as MessageKey)}
+            </button>
+          ),
+        )}
       </div>
       {tab === 'organisations' && <Organisations />}
       {tab === 'shipments' && <Shipments />}
       {tab === 'countries' && <Countries />}
+      {tab === 'pricing' && <Pricing />}
       {tab === 'finance' && <Finance />}
       {tab === 'audit' && <Audit />}
     </div>
@@ -423,5 +426,282 @@ function Audit() {
         </tbody>
       </table>
     </Card>
+  );
+}
+
+type PricingConfig = {
+  version: string;
+  currency: string;
+  vehicles: Record<string, { baseMinor: number; perKmMinor: number; minimumMinor: number }>;
+  serviceLevels: Record<
+    string,
+    {
+      factorBp: number;
+      searchMinutes: number;
+      initialRadiusKm: number;
+      maxRadiusKm: number;
+      pickupLeadMinutes: number;
+    }
+  >;
+  platformFee: {
+    kind: 'markup_on_payout' | 'commission_on_price';
+    bp: number;
+    minimumMinor: number;
+  };
+  [k: string]: unknown;
+};
+
+/** Pricing editor: saving always creates a new version (old versions stay for history). */
+function Pricing() {
+  const { t, locale } = useI18n();
+  const { data, error, load, setError } =
+    useLoad<
+      Array<{
+        version: string;
+        config: PricingConfig;
+        active: boolean;
+        createdAt: string;
+        note: string | null;
+      }>
+    >('/api/admin/pricing');
+  const [cfg, setCfg] = useState<PricingConfig | null>(null);
+  const [json, setJson] = useState('');
+  const [note, setNote] = useState('');
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    const active = data?.find((p) => p.active);
+    if (active && !cfg) {
+      const next = {
+        ...active.config,
+        version: `v${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')}`,
+      };
+      setCfg(next);
+      setJson(JSON.stringify(next, null, 2));
+    }
+  }, [data, cfg]);
+  if (error) return <ErrorText error={error} />;
+  if (!cfg) return <Spinner />;
+  const update = (next: PricingConfig) => {
+    setCfg(next);
+    setJson(JSON.stringify(next, null, 2));
+    setSaved(false);
+  };
+  const euro = (minor: number) => String(minor / 100);
+  const toMinor = (v: string) => Math.round(Number(v.replace(',', '.')) * 100);
+  const save = async () => {
+    try {
+      const parsed = JSON.parse(json) as PricingConfig;
+      await post('/api/admin/pricing', { config: parsed, activate: true, note: note || null });
+      setSaved(true);
+      setCfg(null);
+      load();
+    } catch (e) {
+      setError(e);
+    }
+  };
+  return (
+    <div className="space-y-4">
+      <Alert tone="amber">{t('admin.pricingWarning')}</Alert>
+      <Card className="space-y-3">
+        <div className="font-semibold">{t('admin.platformFee')}</div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label={t('admin.feeKind')}>
+            <select
+              className="input"
+              value={cfg.platformFee.kind}
+              onChange={(e) =>
+                update({
+                  ...cfg,
+                  platformFee: {
+                    ...cfg.platformFee,
+                    kind: e.target.value as PricingConfig['platformFee']['kind'],
+                  },
+                })
+              }
+            >
+              <option value="markup_on_payout">{t('admin.markup')}</option>
+              <option value="commission_on_price">{t('admin.commission')}</option>
+            </select>
+          </Field>
+          <Field label="%">
+            <input
+              className="input"
+              inputMode="decimal"
+              value={cfg.platformFee.bp / 100}
+              onChange={(e) =>
+                update({
+                  ...cfg,
+                  platformFee: { ...cfg.platformFee, bp: Math.round(Number(e.target.value) * 100) },
+                })
+              }
+            />
+          </Field>
+          <Field label={t('admin.minimumFee')}>
+            <input
+              className="input"
+              inputMode="decimal"
+              value={euro(cfg.platformFee.minimumMinor)}
+              onChange={(e) =>
+                update({
+                  ...cfg,
+                  platformFee: { ...cfg.platformFee, minimumMinor: toMinor(e.target.value) },
+                })
+              }
+            />
+          </Field>
+        </div>
+      </Card>
+      <Card className="overflow-x-auto">
+        <div className="mb-2 font-semibold">{t('admin.serviceLevels')}</div>
+        <table className="w-full text-sm">
+          <thead className="text-left text-ink-soft">
+            <tr>
+              <th className="py-1">{t('book.service')}</th>
+              <th>{t('admin.factor')}</th>
+              <th>{t('admin.searchHours')}</th>
+              <th>{t('admin.radius')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(cfg.serviceLevels).map(([k, v]) => (
+              <tr key={k}>
+                <td className="py-1 pr-2">{t(`level.${k}` as MessageKey)}</td>
+                <td className="pr-2">
+                  <input
+                    className="input py-1"
+                    value={v.factorBp / 100}
+                    onChange={(e) =>
+                      update({
+                        ...cfg,
+                        serviceLevels: {
+                          ...cfg.serviceLevels,
+                          [k]: { ...v, factorBp: Math.round(Number(e.target.value) * 100) },
+                        },
+                      })
+                    }
+                  />
+                </td>
+                <td className="pr-2">
+                  <input
+                    className="input py-1"
+                    value={v.searchMinutes / 60}
+                    onChange={(e) =>
+                      update({
+                        ...cfg,
+                        serviceLevels: {
+                          ...cfg.serviceLevels,
+                          [k]: { ...v, searchMinutes: Math.round(Number(e.target.value) * 60) },
+                        },
+                      })
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    className="input py-1"
+                    value={v.maxRadiusKm}
+                    onChange={(e) =>
+                      update({
+                        ...cfg,
+                        serviceLevels: {
+                          ...cfg.serviceLevels,
+                          [k]: { ...v, maxRadiusKm: Number(e.target.value) },
+                        },
+                      })
+                    }
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+      <Card className="overflow-x-auto">
+        <div className="mb-2 font-semibold">{t('admin.vehicleRates')}</div>
+        <table className="w-full text-sm">
+          <thead className="text-left text-ink-soft">
+            <tr>
+              <th className="py-1">{t('fleet.type')}</th>
+              <th>{t('admin.base')}</th>
+              <th>{t('admin.perKm')}</th>
+              <th>{t('admin.minimum')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(cfg.vehicles).map(([k, v]) => (
+              <tr key={k}>
+                <td className="py-1 pr-2">{t(`vehicle.${k}` as MessageKey)}</td>
+                {(['baseMinor', 'perKmMinor', 'minimumMinor'] as const).map((f) => (
+                  <td key={f} className="pr-2">
+                    <input
+                      className="input py-1"
+                      value={euro(v[f])}
+                      onChange={(e) =>
+                        update({
+                          ...cfg,
+                          vehicles: {
+                            ...cfg.vehicles,
+                            [k]: { ...v, [f]: toMinor(e.target.value) },
+                          },
+                        })
+                      }
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+      <Card className="space-y-3">
+        <div className="font-semibold">{t('admin.advanced')}</div>
+        <textarea
+          className="input font-mono text-xs"
+          rows={14}
+          value={json}
+          onChange={(e) => (setJson(e.target.value), setSaved(false))}
+          onBlur={() => {
+            try {
+              setCfg(JSON.parse(json));
+            } catch {
+              /* shown on save */
+            }
+          }}
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label={t('admin.version')}>
+            <input
+              className="input"
+              value={cfg.version}
+              onChange={(e) => update({ ...cfg, version: e.target.value })}
+            />
+          </Field>
+          <Field label={t('admin.note')}>
+            <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+          </Field>
+        </div>
+        {saved && <Alert tone="green" title={t('settings.saved')} />}
+        <button className="btn-primary" onClick={save}>
+          {t('admin.saveVersion')}
+        </button>
+      </Card>
+      <Card>
+        <div className="mb-2 font-semibold">{t('admin.history')}</div>
+        {data?.map((p) => (
+          <div
+            key={p.version}
+            className="flex justify-between border-b border-slate-100 py-1 text-sm"
+          >
+            <span className="font-mono">
+              {p.version}
+              {p.active && <Badge tone="green">{t('admin.active')}</Badge>}
+            </span>
+            <span className="text-ink-soft">
+              {p.note} · {dateTime(p.createdAt, locale)}
+            </span>
+          </div>
+        ))}
+      </Card>
+    </div>
   );
 }

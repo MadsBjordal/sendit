@@ -8,8 +8,15 @@ export interface Config {
   brand: Brand;
   paymentProvider: 'test';
   paymentWebhookSecret: string;
-  emailProvider: 'log';
+  emailProvider: 'log' | 'smtp';
+  smtpUrl: string | null;
+  emailFrom: string;
   routingProvider: 'estimate';
+  fileStorageDir: string;
+  /** Hours the customer has to confirm or dispute a delivery before it is accepted automatically */
+  deliveryAcceptHours: number;
+  /** Days tracking positions are kept */
+  trackingRetentionDays: number;
   /** Run the background job worker inside this process */
   runWorker: boolean;
 }
@@ -36,8 +43,13 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     brand: brandFrom(env),
     paymentProvider: 'test',
     paymentWebhookSecret: secret || 'dev-webhook-secret',
-    emailProvider: 'log',
+    emailProvider: env.EMAIL_PROVIDER === 'smtp' ? 'smtp' : 'log',
+    smtpUrl: env.SMTP_URL ?? null,
+    emailFrom: env.EMAIL_FROM ?? `${env.BRAND_NAME || 'Project Freight'} <no-reply@example.com>`,
     routingProvider: 'estimate',
+    fileStorageDir: env.FILE_STORAGE_DIR ?? './data/files',
+    deliveryAcceptHours: Number(env.DELIVERY_ACCEPT_HOURS ?? 48),
+    trackingRetentionDays: Number(env.TRACKING_RETENTION_DAYS ?? 90),
     runWorker: env.RUN_WORKER !== 'false',
   };
 }

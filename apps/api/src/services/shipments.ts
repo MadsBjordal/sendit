@@ -34,6 +34,7 @@ import { pointWkt } from './carriers';
 import { enqueue } from './jobs';
 import { assertRouteOpen, activePricing } from './platformConfig';
 import { createPayment } from './payments';
+import { touchAddresses } from './addresses';
 
 export function cargoRequirements(
   cargo: Pick<
@@ -252,6 +253,7 @@ export async function createShipment(
     });
     await audit(tx, actor, 'shipment.created', { type: 'shipment', id });
   });
+  await touchAddresses(ctx, actor.orgId, [input.pickup, input.delivery]);
   return { id, payment: payment.clientAction, estimate: q.estimate, customs: q.customs };
 }
 
@@ -544,3 +546,58 @@ export async function obligationFor(db: DbOrTx, bookingId: string) {
 }
 
 export type { PricingConfig };
+
+/** What is needed to book the same transport again (dates are chosen anew). */
+export async function shipmentTemplate(ctx: Ctx, orgId: string, shipmentId: string) {
+  const [s] = await ctx.db
+    .select()
+    .from(shipments)
+    .where(and(eq(shipments.id, shipmentId), eq(shipments.orgId, orgId)));
+  if (!s) throw notFound();
+  const locs = (await locationsOf(ctx.db, [s.id])).get(s.id)!;
+  const lines = await ctx.db
+    .select()
+    .from(cargoLines)
+    .where(eq(cargoLines.shipmentId, s.id))
+    .orderBy(cargoLines.position);
+  const place = (p: typeof shipmentLocations.$inferSelect) => ({
+    label: `${p.addressLine}, ${p.postcode} ${p.city}, ${p.country}`,
+    addressLine: p.addressLine,
+    postcode: p.postcode,
+    city: p.city,
+    country: p.country,
+    lat: p.lat,
+    lng: p.lng,
+    contactName: p.contactName,
+    contactPhone: p.contactPhone,
+    hasForklift: p.hasForklift,
+    hasLoadingDock: p.hasLoadingDock,
+    instructions: p.instructions,
+    // Time of day only; the dates are chosen again
+    fromTime: p.windowStart.toISOString().slice(11, 16),
+    toTime: p.windowEnd.toISOString().slice(11, 16),
+  });
+  const cargo = s.cargo as Record<string, unknown>;
+  return {
+    pickup: place(locs.pickup),
+    delivery: place(locs.delivery),
+    cargo: {
+      ...cargo,
+      lines: lines.map(
+        ({ quantity, kind, lengthCm, widthCm, heightCm, weightKg, stackable, description }) => ({
+          quantity,
+          kind,
+          lengthCm,
+          widthCm,
+          heightCm,
+          weightKg,
+          stackable,
+          description,
+        }),
+      ),
+    },
+    serviceLevel: s.serviceLevel,
+    maxPriceMinor: s.maxPriceMinor,
+    reference: s.reference,
+  };
+}

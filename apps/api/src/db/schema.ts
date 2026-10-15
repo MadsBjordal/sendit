@@ -66,6 +66,8 @@ export const users = pgTable(
     failedLogins: integer('failed_logins').notNull().default(0),
     lockedUntil: ts('locked_until'),
     active: boolean('active').notNull().default(true),
+    /** Per notification kind: { email: false } turns that email off. In-app notifications are always kept. */
+    notificationPrefs: jsonb('notification_prefs').notNull().default({}),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex('users_email_key').on(sql`lower(${t.email})`)],
@@ -212,6 +214,32 @@ export const featureFlags = pgTable('feature_flags', {
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
 
+/** Places a company uses often: offered on the booking screen */
+export const savedAddresses = pgTable(
+  'saved_addresses',
+  {
+    id: id(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organisations.id),
+    label: text('label').notNull(),
+    addressLine: text('address_line').notNull(),
+    postcode: text('postcode').notNull(),
+    city: text('city').notNull(),
+    country: text('country').notNull(),
+    lat: real('lat').notNull(),
+    lng: real('lng').notNull(),
+    contactName: text('contact_name'),
+    contactPhone: text('contact_phone'),
+    hasForklift: boolean('has_forklift').notNull().default(false),
+    hasLoadingDock: boolean('has_loading_dock').notNull().default(false),
+    instructions: text('instructions'),
+    lastUsedAt: ts('last_used_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('saved_addresses_org_idx').on(t.orgId)],
+);
+
 // ---------------------------------------------------------------- fleet
 
 export const vehicles = pgTable(
@@ -244,6 +272,54 @@ export const vehicles = pgTable(
     uniqueIndex('vehicles_org_registration_key').on(t.orgId, t.registration),
     index('vehicles_base_location_gix').using('gist', t.baseLocation),
   ],
+);
+
+/** A carrier's drivers. A driver logs in to the driver app with a user account (role "driver"). */
+export const drivers = pgTable(
+  'drivers',
+  {
+    id: id(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organisations.id),
+    userId: uuid('user_id').references(() => users.id),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    /** Driving licence categories, e.g. B, C1, C, CE */
+    licenceCategories: text('licence_categories')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    licenceValidUntil: date('licence_valid_until'),
+    /** Driver qualification card (Code 95 / CPC) */
+    cpcValidUntil: date('cpc_valid_until'),
+    active: boolean('active').notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('drivers_org_idx').on(t.orgId),
+    uniqueIndex('drivers_org_email_key').on(t.orgId, sql`lower(${t.email})`),
+  ],
+);
+
+/** Uploaded files (photos, signatures, proofs of delivery, documents). Stored privately; served only after an access check. */
+export const files = pgTable(
+  'files',
+  {
+    id: id(),
+    orgId: uuid('org_id').references(() => organisations.id),
+    shipmentId: uuid('shipment_id'),
+    kind: text('kind').notNull(), // photo | signature | pod | document | invoice | statement | evidence
+    storageKey: text('storage_key').notNull().unique(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    sha256: text('sha256').notNull(),
+    fileName: text('file_name'),
+    uploadedBy: uuid('uploaded_by'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('files_shipment_idx').on(t.shipmentId)],
 );
 
 // ---------------------------------------------------------------- shipments & booking
@@ -292,6 +368,10 @@ export const shipments = pgTable(
     publishedAt: ts('published_at'),
     searchExpiresAt: ts('search_expires_at'),
     bookedAt: ts('booked_at'),
+    collectedAt: ts('collected_at'),
+    deliveredAt: ts('delivered_at'),
+    completedAt: ts('completed_at'),
+    podFileId: uuid('pod_file_id'),
     cancelledAt: ts('cancelled_at'),
     cancelReason: text('cancel_reason'),
     createdAt: createdAt(),
@@ -416,6 +496,8 @@ export const bookings = pgTable('bookings', {
     .notNull()
     .references(() => users.id),
   cabotageConfirmed: boolean('cabotage_confirmed').notNull().default(false),
+  driverId: uuid('driver_id'),
+  assignedAt: ts('assigned_at'),
   createdAt: createdAt(),
 });
 
@@ -455,6 +537,95 @@ export const shipmentEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('shipment_events_shipment_idx').on(t.shipmentId, t.id)],
+);
+
+/**
+ * What happened on the road, recorded by the driver (or the carrier's dispatcher): arrival, loading
+ * with counted quantities, departure, border crossing, delay, delivery with recipient and signature.
+ * The client event id makes offline retries safe.
+ */
+export const tripEvents = pgTable(
+  'trip_events',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    clientEventId: text('client_event_id').notNull(),
+    action: text('action').notNull(),
+    occurredAt: ts('occurred_at').notNull(),
+    receivedAt: ts('received_at').notNull().defaultNow(),
+    lat: real('lat'),
+    lng: real('lng'),
+    countedUnits: integer('counted_units'),
+    discrepancy: text('discrepancy'),
+    damage: boolean('damage').notNull().default(false),
+    damageNote: text('damage_note'),
+    recipientName: text('recipient_name'),
+    signatureFileId: uuid('signature_file_id'),
+    photoFileIds: uuid('photo_file_ids')
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
+    delayMinutes: integer('delay_minutes'),
+    note: text('note'),
+    country: text('country'),
+    recordedBy: uuid('recorded_by').notNull(),
+    recordedAs: text('recorded_as').notNull(), // driver | dispatcher
+  },
+  (t) => [
+    uniqueIndex('trip_events_client_key').on(t.shipmentId, t.clientEventId),
+    index('trip_events_shipment_idx').on(t.shipmentId, t.occurredAt),
+  ],
+);
+
+/** Positions sent by the driver app during an active trip only. Purged after the retention period. */
+export const trackingPositions = pgTable(
+  'tracking_positions',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    driverId: uuid('driver_id').notNull(),
+    at: ts('at').notNull(),
+    lat: real('lat').notNull(),
+    lng: real('lng').notNull(),
+    accuracyM: real('accuracy_m'),
+    speedKmh: real('speed_kmh'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('tracking_positions_shipment_idx').on(t.shipmentId, t.at)],
+);
+
+/** Messages on a shipment between the people allowed to see it */
+export const messages = pgTable(
+  'messages',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    senderUserId: uuid('sender_user_id')
+      .notNull()
+      .references(() => users.id),
+    senderOrgId: uuid('sender_org_id'),
+    senderRole: text('sender_role').notNull(), // shipper | carrier | driver | customs | platform
+    body: text('body').notNull(),
+    fileId: uuid('file_id'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('messages_shipment_idx').on(t.shipmentId, t.createdAt)],
+);
+
+export const messageReads = pgTable(
+  'message_reads',
+  {
+    shipmentId: uuid('shipment_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    lastReadAt: ts('last_read_at').notNull(),
+  },
+  (t) => [uniqueIndex('message_reads_key').on(t.shipmentId, t.userId)],
 );
 
 // ---------------------------------------------------------------- money

@@ -7,3 +7,4 @@ dist
 coverage
 .turbo
 next-env.d.ts
+data/
