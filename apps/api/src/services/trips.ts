@@ -489,21 +489,25 @@ registerJob('generate_pod', async (ctx, payload) => {
  * Delivery accepted (by the customer, or automatically after the acceptance period): the transport
  * contract is complete, our fee is earned and the carrier's payout becomes due.
  */
-async function complete(
+export async function complete(
   ctx: Ctx,
   tx: Tx,
   shipmentId: string,
-  how: 'customer' | 'automatic',
+  how: 'customer' | 'automatic' | 'dispute_resolution',
   actor: Actor,
+  /** After a dispute: what the platform paid towards the customer's refund, taken off its fee */
+  platformShareMinor = 0,
 ) {
   const s = (await lockShipment(tx, shipmentId))!;
-  if (s.status !== 'delivered') return false;
+  if (s.status !== 'delivered' && !(how === 'dispute_resolution' && s.status === 'disputed'))
+    return false;
   const now = ctx.now();
   await tx
     .update(shipments)
     .set({ status: 'completed', completedAt: now, updatedAt: now })
     .where(eq(shipments.id, shipmentId));
   const [b] = await tx.select().from(bookings).where(eq(bookings.shipmentId, shipmentId));
+  const earned = b!.platformFeeMinor - platformShareMinor;
   await post(
     tx,
     {
@@ -514,14 +518,19 @@ async function complete(
       currency: b!.currency,
     },
     [
-      { account: 'platform_revenue_deferred', amountMinor: b!.platformFeeMinor },
-      { account: 'platform_revenue', amountMinor: -b!.platformFeeMinor },
+      { account: 'platform_revenue_deferred', amountMinor: earned },
+      { account: 'platform_revenue', amountMinor: -earned },
     ],
   );
   const [o] = await tx
     .update(carrierObligations)
     .set({ status: 'payable', payableAt: now })
-    .where(and(eq(carrierObligations.bookingId, b!.id), eq(carrierObligations.status, 'committed')))
+    .where(
+      and(
+        eq(carrierObligations.bookingId, b!.id),
+        inArray(carrierObligations.status, ['committed', 'disputed']),
+      ),
+    )
     .returning();
   if (o)
     await enqueue(tx, 'carrier_payout', { obligationId: o.id }, { dedupeKey: `payout:${o.id}` });

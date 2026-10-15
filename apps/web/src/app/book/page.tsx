@@ -795,7 +795,7 @@ function BookForm() {
                   <li key={`n${i}`}>{n}</li>
                 ))}
               </ul>
-              <div className="mt-1 text-xs">{t('customs.laterPhase')}</div>
+              <div className="mt-1 text-xs">{t('customs.arrangeAfter')}</div>
             </Alert>
           )}
           <Field

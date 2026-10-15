@@ -5,6 +5,7 @@ import type { Tx } from '../db/client';
 import {
   bookings,
   carrierObligations,
+  customsJobs,
   invoices,
   invoiceSequences,
   organisations,
@@ -286,12 +287,23 @@ registerJob('issue_carrier_statement', async (ctx, payload) => {
       .from(carrierObligations)
       .where(eq(carrierObligations.id, obligationId));
     if (!o) return;
-    const [b] = await tx.select().from(bookings).where(eq(bookings.id, o.bookingId));
-    const [s] = await tx.select().from(shipments).where(eq(shipments.id, b!.shipmentId));
+    let shipmentId: string;
+    let description: string;
+    if (o.kind === 'customs') {
+      const [j] = await tx.select().from(customsJobs).where(eq(customsJobs.id, o.customsJobId!));
+      const [s] = await tx.select().from(shipments).where(eq(shipments.id, j!.shipmentId));
+      shipmentId = s!.id;
+      description = `Customs service ${j!.service.replaceAll('_', ' ')} in ${j!.country} (${shipmentNumber(s!.number)})`;
+    } else {
+      const [b] = await tx.select().from(bookings).where(eq(bookings.id, o.bookingId!));
+      const [s] = await tx.select().from(shipments).where(eq(shipments.id, b!.shipmentId));
+      shipmentId = s!.id;
+      description = `Transport ${await route(tx, s!.id)} (${shipmentNumber(s!.number)})`;
+    }
     await issue(ctx, tx, {
-      kind: 'carrier_statement',
+      kind: o.kind === 'customs' ? 'customs_statement' : 'carrier_statement',
       orgId: o.carrierOrgId,
-      shipmentId: s!.id,
+      shipmentId,
       refType: 'obligation',
       refId: o.id,
       currency: o.currency,
@@ -299,16 +311,43 @@ registerJob('issue_carrier_statement', async (ctx, payload) => {
       vatMinor: 0,
       vatBp: 0,
       taxNote:
-        'Amount agreed at booking. VAT treatment of carrier services to be confirmed by the tax adviser.',
+        'Amount agreed at assignment. VAT treatment of the service to be confirmed by the tax adviser.',
+      lines: [{ description, netMinor: o.amountMinor }],
+    });
+  });
+});
+
+/** Invoice for the customs service fee, issued when a provider is assigned. */
+export async function issueCustomsInvoice(ctx: Ctx, jobId: string) {
+  await ctx.db.transaction(async (tx) => {
+    const [j] = await tx.select().from(customsJobs).where(eq(customsJobs.id, jobId));
+    if (!j || !j.priceMinor) return;
+    const [s] = await tx.select().from(shipments).where(eq(shipments.id, j.shipmentId));
+    const net = (j.providerFeeMinor ?? 0) + (j.platformFeeMinor ?? 0);
+    const vat = j.priceMinor - net;
+    await issue(ctx, tx, {
+      kind: 'customs_invoice',
+      orgId: j.orgId,
+      shipmentId: j.shipmentId,
+      refType: 'customs_job',
+      refId: j.id,
+      currency: j.currency,
+      netMinor: net,
+      vatMinor: vat,
+      vatBp: vat === 0 ? 0 : Math.round((vat * 10_000) / net),
+      taxNote:
+        vat === 0
+          ? 'VAT reverse charge assumed (to be confirmed by the tax adviser). Customs duties and import VAT are not included.'
+          : 'Customs duties and import VAT are not included.',
       lines: [
         {
-          description: `Transport ${await route(tx, s!.id)} (${shipmentNumber(s!.number)})`,
-          netMinor: o.amountMinor,
+          description: `Customs service: ${j.service.replaceAll('_', ' ')} in ${j.country} (${shipmentNumber(s!.number)})`,
+          netMinor: net,
         },
       ],
     });
   });
-});
+}
 
 export async function listInvoices(ctx: Ctx, orgId: string) {
   return ctx.db

@@ -33,7 +33,7 @@ export type OfferStatus = (typeof OFFER_STATUSES)[number];
 export const PAYMENT_STATUSES = ['pending', 'succeeded', 'failed', 'cancelled'] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const PAYMENT_PURPOSES = ['prepayment', 'top_up'] as const;
+export const PAYMENT_PURPOSES = ['prepayment', 'top_up', 'customs', 'customs_top_up'] as const;
 export type PaymentPurpose = (typeof PAYMENT_PURPOSES)[number];
 
 export const ORG_KINDS = ['shipper', 'carrier', 'customs_provider', 'platform'] as const;

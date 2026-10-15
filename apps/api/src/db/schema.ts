@@ -671,6 +671,164 @@ export const messageReads = pgTable(
   (t) => [uniqueIndex('message_reads_key').on(t.shipmentId, t.userId)],
 );
 
+// ---------------------------------------------------------------- customs
+
+/** A customs provider's offer on the platform: where it files, what it does, standard prices. */
+export const customsProviderProfiles = pgTable('customs_provider_profiles', {
+  orgId: uuid('org_id')
+    .primaryKey()
+    .references(() => organisations.id),
+  /** Countries in which it files declarations or acts */
+  countries: text('countries')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  services: text('services')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  /** Standard fee per service code, minor units EUR: { export_declaration: 4500, ... } */
+  prices: jsonb('prices').notNull().default({}),
+  workingHours: text('working_hours'),
+  dailyCapacity: integer('daily_capacity').notNull().default(20),
+  contactPhone: text('contact_phone'),
+  contactEmail: text('contact_email'),
+  active: boolean('active').notNull().default(true),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+
+/**
+ * One customs procedure on one shipment (export, import, transit, safety & security, GVMS, fiscal).
+ * Each has its own status: an accepted export never means the import is done.
+ */
+export const customsProcedures = pgTable(
+  'customs_procedures',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    kind: text('kind').notNull(),
+    territory: text('territory'),
+    /** Country where it is filed */
+    country: text('country'),
+    certainty: text('certainty').notNull(), // required | possible
+    reason: text('reason').notNull(),
+    status: text('status').notNull(),
+    statusReason: text('status_reason'),
+    /** How the customer arranges it: marketplace | own_broker | responsible_party | not_required */
+    arrangement: text('arrangement'),
+    reference: text('reference'), // MRN, GMR, LRN…
+    referenceType: text('reference_type'),
+    handledByOrgId: uuid('handled_by_org_id'),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('customs_procedures_shipment_idx').on(t.shipmentId)],
+);
+
+/** Who is legally responsible for what (exporter, importer of record, declarants, duty payer…). */
+export const customsParties = pgTable(
+  'customs_parties',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    role: text('role').notNull(),
+    orgId: uuid('org_id'),
+    name: text('name').notNull(),
+    email: text('email'),
+    eori: text('eori'),
+    /** A party other than the customer must confirm before it counts */
+    ackTokenHash: text('ack_token_hash'),
+    acknowledgedAt: ts('acknowledged_at'),
+    acknowledgedName: text('acknowledged_name'),
+    assignedBy: uuid('assigned_by').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('customs_parties_role_key').on(t.shipmentId, t.role)],
+);
+
+/** Customs work given to a provider: from the marketplace (first acceptance within budget) or by quote. */
+export const customsJobs = pgTable(
+  'customs_jobs',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organisations.id),
+    procedureIds: uuid('procedure_ids').array().notNull(),
+    service: text('service').notNull(),
+    country: text('country').notNull(),
+    /** quote_required: providers quote first; standard: first acceptance within budget */
+    mode: text('mode').notNull(),
+    /** awaiting_payment → open → assigned → completed; cancelled | expired */
+    status: text('status').notNull(),
+    budgetMinor: minor('budget_minor').notNull(),
+    fundedMinor: minor('funded_minor').notNull().default(0),
+    listedFeeMinor: minor('listed_fee_minor').notNull(),
+    currency: text('currency').notNull(),
+    providerOrgId: uuid('provider_org_id'),
+    priceMinor: minor('price_minor'),
+    providerFeeMinor: minor('provider_fee_minor'),
+    platformFeeMinor: minor('platform_fee_minor'),
+    notes: text('notes'),
+    assignedAt: ts('assigned_at'),
+    completedAt: ts('completed_at'),
+    expiresAt: ts('expires_at').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('customs_jobs_status_idx').on(t.status),
+    index('customs_jobs_shipment_idx').on(t.shipmentId),
+  ],
+);
+
+/** A provider's price for a job that needs a quote, or above the customer's customs budget. */
+export const customsQuotes = pgTable('customs_quotes', {
+  id: id(),
+  jobId: uuid('job_id')
+    .notNull()
+    .references(() => customsJobs.id),
+  providerOrgId: uuid('provider_org_id')
+    .notNull()
+    .references(() => organisations.id),
+  feeMinor: minor('fee_minor').notNull(),
+  totalMinor: minor('total_minor').notNull(),
+  note: text('note'),
+  status: text('status').notNull(), // pending_customer | approved | accepted | rejected | expired | superseded
+  expiresAt: ts('expires_at').notNull(),
+  createdBy: uuid('created_by').notNull(),
+  createdAt: createdAt(),
+});
+
+/** Customs documents with versions: a new upload of the same type replaces the previous one. */
+export const customsDocuments = pgTable(
+  'customs_documents',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    docType: text('doc_type').notNull(),
+    version: integer('version').notNull(),
+    fileId: uuid('file_id').notNull(),
+    status: text('status').notNull(), // current | superseded | rejected
+    reference: text('reference'),
+    validUntil: date('valid_until'),
+    note: text('note'),
+    uploadedBy: uuid('uploaded_by').notNull(),
+    uploadedByOrgId: uuid('uploaded_by_org_id'),
+    reviewNote: text('review_note'),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('customs_documents_version_key').on(t.shipmentId, t.docType, t.version)],
+);
+
 // ---------------------------------------------------------------- money
 
 export const payments = pgTable(
@@ -683,7 +841,8 @@ export const payments = pgTable(
     orgId: uuid('org_id')
       .notNull()
       .references(() => organisations.id),
-    purpose: text('purpose').notNull(), // prepayment | top_up
+    purpose: text('purpose').notNull(), // prepayment | top_up | customs | customs_top_up
+    customsJobId: uuid('customs_job_id'),
     offerId: uuid('offer_id').references(() => offers.id),
     amountMinor: minor('amount_minor').notNull(),
     currency: text('currency').notNull(),
@@ -786,10 +945,12 @@ export const ledgerEntries = pgTable(
 /** The platform's promise to pay the carrier for a booking */
 export const carrierObligations = pgTable('carrier_obligations', {
   id: id(),
+  /** carrier (a transport booking) or customs (a customs job) */
+  kind: text('kind').notNull().default('carrier'),
   bookingId: uuid('booking_id')
-    .notNull()
     .unique()
     .references(() => bookings.id),
+  customsJobId: uuid('customs_job_id').unique(),
   carrierOrgId: uuid('carrier_org_id')
     .notNull()
     .references(() => organisations.id),
@@ -849,6 +1010,96 @@ export const payouts = pgTable(
       .where(sql`${t.status} in ('pending', 'paid')`),
   ],
 );
+
+// ---------------------------------------------------------------- disputes, support, fraud, privacy
+
+/** A customer's complaint about a delivery (damage, shortage…). While open, the carrier payout is held. */
+export const disputes = pgTable(
+  'disputes',
+  {
+    id: id(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => shipments.id),
+    openedByOrgId: uuid('opened_by_org_id').notNull(),
+    openedBy: uuid('opened_by').notNull(),
+    kind: text('kind').notNull(), // damage | shortage | not_delivered | late | other
+    description: text('description').notNull(),
+    evidenceFileIds: uuid('evidence_file_ids')
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
+    status: text('status').notNull(), // open | resolved | rejected
+    resolution: text('resolution'),
+    customerRefundMinor: minor('customer_refund_minor'),
+    carrierDeductionMinor: minor('carrier_deduction_minor'),
+    resolvedBy: uuid('resolved_by'),
+    resolvedAt: ts('resolved_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('disputes_shipment_idx').on(t.shipmentId)],
+);
+
+export const supportTickets = pgTable(
+  'support_tickets',
+  {
+    id: id(),
+    orgId: uuid('org_id'),
+    userId: uuid('user_id').notNull(),
+    shipmentId: uuid('shipment_id'),
+    subject: text('subject').notNull(),
+    status: text('status').notNull(), // open | answered | closed
+    createdAt: createdAt(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [index('support_tickets_status_idx').on(t.status, t.updatedAt)],
+);
+
+export const supportMessages = pgTable('support_messages', {
+  id: id(),
+  ticketId: uuid('ticket_id')
+    .notNull()
+    .references(() => supportTickets.id),
+  userId: uuid('user_id').notNull(),
+  fromStaff: boolean('from_staff').notNull(),
+  body: text('body').notNull(),
+  createdAt: createdAt(),
+});
+
+/** Something that looks wrong, for a person to review. Some alerts also hold money until reviewed. */
+export const fraudAlerts = pgTable(
+  'fraud_alerts',
+  {
+    id: id(),
+    kind: text('kind').notNull(),
+    severity: text('severity').notNull(), // low | medium | high
+    orgId: uuid('org_id'),
+    shipmentId: uuid('shipment_id'),
+    refType: text('ref_type'),
+    refId: uuid('ref_id'),
+    details: jsonb('details').notNull().default({}),
+    status: text('status').notNull().default('open'), // open | dismissed | confirmed
+    dedupeKey: text('dedupe_key').notNull().unique(),
+    reviewedBy: uuid('reviewed_by'),
+    reviewedAt: ts('reviewed_at'),
+    reviewNote: text('review_note'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('fraud_alerts_status_idx').on(t.status, t.createdAt)],
+);
+
+/** GDPR requests: a copy of one's personal data, or erasure (financial records are kept as the law requires). */
+export const privacyRequests = pgTable('privacy_requests', {
+  id: id(),
+  userId: uuid('user_id').notNull(),
+  kind: text('kind').notNull(), // export | erase
+  status: text('status').notNull(), // pending | completed | rejected
+  fileId: uuid('file_id'),
+  note: text('note'),
+  handledBy: uuid('handled_by'),
+  createdAt: createdAt(),
+  completedAt: ts('completed_at'),
+});
 
 // ---------------------------------------------------------------- platform
 

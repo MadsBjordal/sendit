@@ -378,3 +378,65 @@ export const tripEvent = (env: TestEnv, action: string, extra: Record<string, un
   lng: 9.99,
   ...extra,
 });
+
+/** A verified customs provider with an approved customs authorisation and a profile. */
+export async function readyCustomsProvider(
+  env: TestEnv,
+  countries: string[],
+  services: string[],
+  prices: Record<string, number> = {},
+) {
+  const c = await registerCompany(env, 'customs_provider');
+  await c.client.post('/api/carrier/documents', {
+    kind: 'customs_authorisation',
+    reference: 'AEO-1',
+    validUntil: '2030-01-01',
+  });
+  await env.ctx.db
+    .update(verificationDocuments)
+    .set({ status: 'approved' })
+    .where(eq(verificationDocuments.orgId, c.orgId));
+  await env.ctx.db
+    .update(organisations)
+    .set({ status: 'verified' })
+    .where(eq(organisations.id, c.orgId));
+  const p = await c.client.put('/api/customs-provider/profile', {
+    countries,
+    services,
+    prices,
+    contactPhone: '+49 40 999',
+    contactEmail: 'desk@broker.example',
+  });
+  if (p.statusCode !== 200) throw new Error(p.body);
+  return c;
+}
+
+export const pdfBase64 = () => Buffer.from('%PDF-1.4\n% test document\n').toString('base64');
+
+/** Hamburg → Oslo (export from the EU, import into Norway). */
+export function norwayInput(env: TestEnv) {
+  const input = shipmentInput(env);
+  Object.assign(input.delivery, {
+    addressLine: 'Karl Johans gate 1',
+    postcode: '0154',
+    city: 'Oslo',
+    country: 'NO',
+    lat: 59.9111,
+    lng: 10.7503,
+  });
+  return input;
+}
+
+/** Bank details entered "some days ago", so payouts are not held by the fraud rule for recent changes. */
+export async function settledBankDetails(
+  env: TestEnv,
+  client: Client,
+  orgId: string,
+  iban = 'DE89370400440532013000',
+) {
+  const res = await client.put('/api/org/payout-account', { holderName: 'Test Holder GmbH', iban });
+  if (res.statusCode !== 200) throw new Error(res.body);
+  await env.ctx.db.execute(
+    sql`UPDATE payout_accounts SET updated_at = now() - interval '3 days' WHERE org_id = ${orgId}`,
+  );
+}

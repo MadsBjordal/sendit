@@ -6,6 +6,7 @@ import { useRequireAuth } from '@/components/auth';
 import { RouteMap } from '@/components/RouteMap';
 import { TripPanel } from '@/components/TripPanel';
 import { Messages } from '@/components/Messages';
+import { CustomsPanel } from '@/components/CustomsPanel';
 import { Alert, Badge, Card, ErrorText, PageTitle, Spinner, StatusBadge } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { api, post } from '@/lib/api';
@@ -314,35 +315,36 @@ export default function ShipmentPage() {
         onChanged={load}
       />
       {s.booking && <Messages shipmentId={s.id} />}
-      <Card>
-        <div className="mb-2 font-semibold">{t('detail.customs')}</div>
-        <div className="flex items-center gap-2">
-          <Badge
-            tone={
-              s.customs.result === 'required'
-                ? 'amber'
-                : s.customs.result === 'not_required'
-                  ? 'green'
-                  : 'gray'
-            }
-          >
-            {t(`customs.${s.customs.result}` as MessageKey)}
-          </Badge>
-          <span className="text-xs text-ink-faint">
-            {t('detail.rulesVersion', { v: s.customs.assessment.rulesVersion })}
-          </span>
-        </div>
-        {s.customs.assessment.procedures.length > 0 && (
-          <ul className="mt-2 list-disc pl-5 text-sm text-ink-soft">
-            {s.customs.assessment.procedures.map((p, i) => (
-              <li key={i}>{p.reason}</li>
-            ))}
-          </ul>
-        )}
-        {s.customs.result !== 'not_required' && (
-          <p className="mt-2 text-xs text-ink-faint">{t('customs.laterPhase')}</p>
-        )}
-      </Card>
+      {s.customs.assessment.procedures.length > 0 ? (
+        <CustomsPanel shipmentId={s.id} />
+      ) : (
+        <Card>
+          <div className="mb-2 font-semibold">{t('detail.customs')}</div>
+          <div className="flex items-center gap-2">
+            <Badge
+              tone={
+                s.customs.result === 'required'
+                  ? 'amber'
+                  : s.customs.result === 'not_required'
+                    ? 'green'
+                    : 'gray'
+              }
+            >
+              {t(`customs.${s.customs.result}` as MessageKey)}
+            </Badge>
+            <span className="text-xs text-ink-faint">
+              {t('detail.rulesVersion', { v: s.customs.assessment.rulesVersion })}
+            </span>
+          </div>
+          {s.customs.assessment.procedures.length > 0 && (
+            <ul className="mt-2 list-disc pl-5 text-sm text-ink-soft">
+              {s.customs.assessment.procedures.map((p, i) => (
+                <li key={i}>{p.reason}</li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
 
       <Card>
         <div className="mb-3 font-semibold">{t('detail.history')}</div>

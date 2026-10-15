@@ -35,6 +35,8 @@ import { enqueue } from './jobs';
 import { assertRouteOpen, activePricing } from './platformConfig';
 import { createPayment } from './payments';
 import { touchAddresses } from './addresses';
+import { setupProcedures } from './customs';
+import { raiseAlert } from './fraud';
 
 export function cargoRequirements(
   cargo: Pick<
@@ -247,12 +249,26 @@ export async function createShipment(
       breakdown: q.estimate,
     });
     await tx.insert(payments).values(payment.row);
+    await setupProcedures(tx, id, q.customs, input.pickup.country, input.delivery.country);
     await shipmentEvent(tx, id, 'shipment.created', actor, {
       serviceLevel: input.serviceLevel,
       customs: q.customs.result,
     });
     await audit(tx, actor, 'shipment.created', { type: 'shipment', id });
   });
+  // An unusually high maximum compared with the estimate is worth a look (mistake, or money laundering)
+  if (input.maxPriceMinor > q.estimate.customer.totalMinor * 5)
+    await raiseAlert(ctx.db, {
+      kind: 'maximum_far_above_estimate',
+      severity: 'low',
+      orgId: actor.orgId,
+      shipmentId: id,
+      details: {
+        maxPriceMinor: input.maxPriceMinor,
+        estimateMinor: q.estimate.customer.totalMinor,
+      },
+      dedupeKey: `max-high:${id}`,
+    });
   await touchAddresses(ctx, actor.orgId, [input.pickup, input.delivery]);
   return { id, payment: payment.clientAction, estimate: q.estimate, customs: q.customs };
 }

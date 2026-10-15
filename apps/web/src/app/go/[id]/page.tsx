@@ -15,7 +15,7 @@ export default function Go() {
     const kind = me.org?.kind;
     if (kind === 'shipper') router.replace(`/shipments/${id}`);
     else if (kind === 'carrier') router.replace(`/carrier/bookings#${id}`);
-    else if (kind === 'customs_provider') router.replace(`/customs/jobs#${id}`);
+    else if (kind === 'customs_provider') router.replace(`/customs/shipments/${id}`);
     else if (me.user.platformRole) router.replace(`/admin/shipments/${id}`);
     else router.replace('/');
   }, [loading, me, id, router]);

@@ -8,6 +8,7 @@ import { audit, type Actor } from './audit';
 import { enqueue, registerJob } from './jobs';
 import { post } from './ledger';
 import { notifyOrg } from './notifications';
+import { checkSharedIban, payoutNeedsReview, raiseAlert } from './fraud';
 
 /** ISO 13616 IBAN check (mod 97). Does not prove the account exists. */
 export function validIban(raw: string): boolean {
@@ -54,6 +55,7 @@ export async function setPayoutAccount(
     .insert(payoutAccounts)
     .values({ orgId: actor.orgId, ...values })
     .onConflictDoUpdate({ target: payoutAccounts.orgId, set: values });
+  await checkSharedIban(ctx.db, actor.orgId, iban);
   // Changing where money goes is a fraud target: always audited (never the full IBAN in the log)
   await audit(
     ctx.db,
@@ -106,6 +108,22 @@ registerJob('carrier_payout', async (ctx, payload) => {
       .from(payouts)
       .where(and(eq(payouts.obligationId, o.id), inArray(payouts.status, ['pending', 'paid'])));
     if (existing) return;
+    if (await payoutNeedsReview(tx, o.id, o.carrierOrgId, ctx.now())) {
+      await tx
+        .update(carrierObligations)
+        .set({ status: 'on_hold' })
+        .where(eq(carrierObligations.id, o.id));
+      await raiseAlert(tx, {
+        kind: 'payout_account_recently_changed',
+        severity: 'high',
+        orgId: o.carrierOrgId,
+        refType: 'obligation',
+        refId: o.id,
+        details: { amountMinor: o.amountMinor },
+        dedupeKey: `payout-hold:${o.id}`,
+      });
+      return;
+    }
     const failedBefore = (
       await tx
         .select({ id: payouts.id })
@@ -157,7 +175,11 @@ registerJob('carrier_payout', async (ctx, payload) => {
         currency: o.currency,
       },
       [
-        { account: 'carrier_payable', orgId: o.carrierOrgId, amountMinor: o.amountMinor },
+        {
+          account: o.kind === 'customs' ? 'customs_provider_payable' : 'carrier_payable',
+          orgId: o.carrierOrgId,
+          amountMinor: o.amountMinor,
+        },
         { account: 'psp_clearing', amountMinor: -o.amountMinor },
       ],
     );
@@ -207,6 +229,10 @@ export async function payoutEvent(
     .update(payouts)
     .set({ status: 'failed', failureReason: reason ?? 'failed' })
     .where(eq(payouts.id, p.id));
+  const [obligation] = await tx
+    .select()
+    .from(carrierObligations)
+    .where(eq(carrierObligations.id, p.obligationId));
   // The money is back: we owe the carrier again, and they need to check their bank details
   await post(
     tx,
@@ -219,7 +245,11 @@ export async function payoutEvent(
     },
     [
       { account: 'psp_clearing', amountMinor: p.amountMinor },
-      { account: 'carrier_payable', orgId: p.orgId, amountMinor: -p.amountMinor },
+      {
+        account: obligation!.kind === 'customs' ? 'customs_provider_payable' : 'carrier_payable',
+        orgId: p.orgId,
+        amountMinor: -p.amountMinor,
+      },
     ],
   );
   await tx

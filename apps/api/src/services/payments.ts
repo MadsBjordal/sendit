@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { PaymentPurpose } from '@freight/shared';
 import type { Ctx } from '../context';
 import type { Tx } from '../db/client';
@@ -10,6 +10,8 @@ import { post } from './ledger';
 import { notifyOrg } from './notifications';
 import { payoutEvent } from './payouts';
 import { chargebackEvent } from './chargebacks';
+import { customsPaymentReceived } from './customs';
+import { checkFailedPayments } from './fraud';
 
 const SYSTEM = { userId: null, orgId: null };
 
@@ -118,6 +120,7 @@ async function processEvent(
       .update(payments)
       .set({ status: 'failed', failureReason: event.data.reason ?? 'declined', updatedAt: now })
       .where(eq(payments.id, payment.id));
+    await checkFailedPayments(tx, payment.orgId, now);
     if (payment.offerId)
       await tx
         .update(offers)
@@ -150,6 +153,8 @@ async function processEvent(
     .update(payments)
     .set({ status: 'succeeded', updatedAt: now })
     .where(eq(payments.id, payment.id));
+  // Customs service payments belong to their customs job, not to the transport
+  if (payment.customsJobId) return customsPaymentReceived(ctx, tx, payment);
   await post(
     tx,
     {
@@ -243,7 +248,13 @@ registerJob('refund_excess', async (ctx, payload) => {
     const paid = await tx
       .select()
       .from(payments)
-      .where(and(eq(payments.shipmentId, shipmentId), eq(payments.status, 'succeeded')))
+      .where(
+        and(
+          eq(payments.shipmentId, shipmentId),
+          eq(payments.status, 'succeeded'),
+          inArray(payments.purpose, ['prepayment', 'top_up']),
+        ),
+      )
       .orderBy(desc(payments.createdAt));
     for (const p of paid) {
       if (toRefund <= 0) break;

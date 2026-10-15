@@ -76,5 +76,6 @@ export function homeFor(me: Me | null): string {
   if (me.user.platformRole) return '/admin';
   if (me.org?.kind === 'carrier') return '/carrier/loads';
   if (me.org?.kind === 'shipper') return '/book';
+  if (me.org?.kind === 'customs_provider') return '/customs/jobs';
   return '/team';
 }

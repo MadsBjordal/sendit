@@ -36,7 +36,7 @@ const KINDS = [
 ] as const;
 
 export default function Verification() {
-  const { me } = useRequireAuth('carrier');
+  const { me } = useRequireAuth(['carrier', 'customs_provider']);
   const { t, locale } = useI18n();
   const [p, setP] = useState<Profile | null>(null);
   const [f, setF] = useState({

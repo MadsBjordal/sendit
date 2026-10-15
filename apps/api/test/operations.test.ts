@@ -1,8 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { carrierObligations, files, payouts, shipments } from '../src/db/schema';
 import { balance } from '../src/services/ledger';
 import {
+  adminClient,
+  settledBankDetails,
   bookedWithDriver,
   carrierWithDriver,
   Client,
@@ -305,6 +307,10 @@ describe('acceptance, completion and payout', () => {
         })
       ).statusCode,
     ).toBe(200);
+    // New bank details hold the payout for review; treat them as entered days ago
+    await env.ctx.db.execute(
+      sql`UPDATE payout_accounts SET updated_at = now() - interval '3 days'`,
+    );
     await env.jobs();
     const [p] = await env.ctx.db.select().from(payouts);
     expect(p).toMatchObject({
@@ -332,10 +338,7 @@ describe('acceptance, completion and payout', () => {
 
   it('is accepted automatically after the acceptance period; a failed payout puts the money back on hold', async () => {
     const t = await bookedWithDriver(env);
-    await t.carrier.client.put('/api/org/payout-account', {
-      holderName: 'Nordtrans GmbH',
-      iban: 'DE89370400440532013000',
-    });
+    await settledBankDetails(env, t.carrier.client, t.carrier.orgId);
     await deliver(t);
     env.advance(47 * 60);
     await env.jobs();
@@ -374,6 +377,23 @@ describe('acceptance, completion and payout', () => {
       holderName: 'Nordtrans GmbH',
       iban: 'NL91ABNA0417164300',
     });
+    await env.jobs();
+    // A change just before paying out is held for review until an admin releases it
+    expect((await env.ctx.db.select().from(carrierObligations))[0]!.status).toBe('on_hold');
+    const admin = await adminClient(env);
+    const alerts = await admin.get('/api/admin/fraud-alerts');
+    const hold = alerts.data.find(
+      (a: { kind: string }) => a.kind === 'payout_account_recently_changed',
+    );
+    expect(hold).toBeTruthy();
+    expect(
+      (
+        await admin.post(`/api/admin/fraud-alerts/${hold.id}/review`, {
+          decision: 'dismissed',
+          note: 'Called the carrier, change confirmed',
+        })
+      ).statusCode,
+    ).toBe(200);
     await env.jobs();
     const all = await env.ctx.db.select().from(payouts);
     expect(all.map((x) => x.status).sort()).toEqual(['failed', 'pending']);

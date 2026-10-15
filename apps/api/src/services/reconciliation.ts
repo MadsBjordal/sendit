@@ -27,7 +27,15 @@ export async function reconciliation(ctx: Ctx) {
   const [owed] =
     await q(sql`SELECT coalesce(sum(o.amount_minor), 0)::bigint AS v FROM carrier_obligations o
     WHERE o.status IN ('committed', 'payable', 'on_hold', 'disputed') AND o.currency = 'EUR'
+      AND o.kind = 'carrier'
       AND NOT EXISTS (SELECT 1 FROM payouts p WHERE p.obligation_id = o.id AND p.status IN ('pending', 'paid'))`);
+  const [owedCustoms] = await q(sql`
+    SELECT coalesce(sum(o.amount_minor), 0)::bigint AS v FROM carrier_obligations o
+    WHERE o.status IN ('committed', 'payable', 'on_hold', 'disputed') AND o.currency = 'EUR' AND o.kind = 'customs'
+      AND NOT EXISTS (SELECT 1 FROM payouts p WHERE p.obligation_id = o.id AND p.status IN ('pending', 'paid'))`);
+  const [heldCustoms] = await q(sql`
+    SELECT coalesce(sum(funded_minor - CASE WHEN status IN ('assigned', 'completed') THEN coalesce(price_minor, 0) ELSE 0 END), 0)::bigint AS v
+    FROM customs_jobs WHERE currency = 'EUR'`);
   const [held] = await q(sql`
     SELECT coalesce(sum(s.funded_minor - coalesce(b.total_minor, 0)), 0)::bigint AS v
     FROM shipments s LEFT JOIN bookings b ON b.shipment_id = s.id WHERE s.currency = 'EUR'`);
@@ -47,9 +55,14 @@ export async function reconciliation(ctx: Ctx) {
       expected: Number(owed!.v),
     },
     {
-      check: 'Customer money held = paid in − used by bookings − refunded',
+      check: 'Owed to customs providers = open obligations without a payout on its way',
+      ledger: -bal('customs_provider_payable'),
+      expected: Number(owedCustoms!.v),
+    },
+    {
+      check: 'Customer money held = paid in − used by bookings and customs jobs − refunded',
       ledger: -bal('customer_funds'),
-      expected: Number(held!.v),
+      expected: Number(held!.v) + Number(heldCustoms!.v),
     },
   ].map((c) => ({ ...c, difference: c.ledger - c.expected, ok: c.ledger === c.expected }));
 

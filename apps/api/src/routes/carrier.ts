@@ -41,14 +41,33 @@ export function carrierRoutes(app: FastifyInstance, ctx: Ctx) {
       },
     },
     async (req) => {
-      const a = member(req, { kind: 'carrier' });
+      const a = member(req, { kind: ['carrier', 'customs_provider'] });
       const [org] = await ctx.db.select().from(organisations).where(eq(organisations.id, a.orgId));
+      const today = ctx.now().toISOString().slice(0, 10);
+      const documents = await listDocuments(ctx.db, a.orgId);
+      // Customs providers need an approved customs authorisation; carriers a licence and insurance
+      const problems =
+        org!.kind === 'customs_provider'
+          ? [
+              ...(org!.status !== 'verified'
+                ? [{ code: 'carrier_not_verified', status: org!.status }]
+                : []),
+              ...(documents.some(
+                (d) =>
+                  d.kind === 'customs_authorisation' &&
+                  d.status === 'approved' &&
+                  (!d.validUntil || d.validUntil >= today),
+              )
+                ? []
+                : [{ code: 'document_missing', kind: 'customs_authorisation' }]),
+            ]
+          : await carrierProblems(ctx.db, a.orgId, today);
       return {
         status: org!.status,
         statusNote: org!.statusNote,
         operatingCountries: org!.operatingCountries,
-        documents: await listDocuments(ctx.db, a.orgId),
-        problems: await carrierProblems(ctx.db, a.orgId, ctx.now().toISOString().slice(0, 10)),
+        documents,
+        problems,
       };
     },
   );

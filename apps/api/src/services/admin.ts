@@ -23,10 +23,23 @@ export const PLATFORM_PERMISSIONS: Record<PlatformRole, string[]> = {
     'finance.view',
     'audit.view',
     'jobs.view',
+    'disputes.resolve',
+    'fraud.review',
+    'privacy.handle',
+    'support.reply',
+    'analytics.view',
   ],
-  platform_ops: ['orgs.review', 'shipments.view', 'jobs.view'],
-  platform_finance: ['finance.view', 'shipments.view'],
-  platform_support: ['shipments.view'],
+  platform_ops: [
+    'orgs.review',
+    'shipments.view',
+    'jobs.view',
+    'disputes.resolve',
+    'fraud.review',
+    'support.reply',
+    'analytics.view',
+  ],
+  platform_finance: ['finance.view', 'shipments.view', 'fraud.review', 'analytics.view'],
+  platform_support: ['shipments.view', 'support.reply', 'disputes.resolve'],
 };
 
 export function platformCan(role: string | null, permission: string): boolean {

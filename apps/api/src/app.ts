@@ -13,6 +13,8 @@ import { carrierRoutes } from './routes/carrier';
 import { miscRoutes } from './routes/misc';
 import { shipperRoutes } from './routes/shipper';
 import { operationsRoutes } from './routes/operations';
+import { customsRoutes } from './routes/customs';
+import { serviceRoutes } from './routes/service';
 import { sessionFromToken } from './services/auth';
 // Job handlers register themselves on import
 import './services/booking';
@@ -21,6 +23,8 @@ import './services/trips';
 import './services/payouts';
 import './services/notifications';
 import './services/invoices';
+import './services/customs';
+import './services/privacy';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -123,6 +127,8 @@ export async function buildApp(
   carrierRoutes(app, ctx);
   adminRoutes(app, ctx);
   operationsRoutes(app, ctx);
+  customsRoutes(app, ctx);
+  serviceRoutes(app, ctx);
   miscRoutes(app, ctx);
   return app;
 }

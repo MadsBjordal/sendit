@@ -4,6 +4,7 @@ import type { Tx } from '../db/client';
 import { payments } from '../db/schema';
 import { audit, shipmentEvent } from './audit';
 import { post } from './ledger';
+import { raiseAlert } from './fraud';
 
 /**
  * A customer's bank or card scheme pulls money back (chargeback). The carrier guarantee does not
@@ -53,6 +54,16 @@ export async function chargebackEvent(
       { type: 'payment', id: p.id },
       { amountMinor: data.amountMinor, reason: data.reason },
     );
+    await raiseAlert(tx, {
+      kind: 'chargeback',
+      severity: 'high',
+      orgId: p.orgId,
+      shipmentId: p.shipmentId,
+      refType: 'payment',
+      refId: p.id,
+      details: { amountMinor: data.amountMinor, reason: data.reason },
+      dedupeKey: `chargeback:${p.id}`,
+    });
     return 'chargeback_recorded';
   }
   // Closed in our favour: the money comes back

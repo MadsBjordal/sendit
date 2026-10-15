@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { invoices, payments } from '../src/db/schema';
 import {
+  settledBankDetails,
   adminClient,
   bookedWithDriver,
   key,
@@ -17,10 +18,7 @@ const env = useTestEnv();
 
 async function fullJob() {
   const t = await bookedWithDriver(env);
-  await t.carrier.client.put('/api/org/payout-account', {
-    holderName: 'Nordtrans GmbH',
-    iban: 'DE89370400440532013000',
-  });
+  await settledBankDetails(env, t.carrier.client, t.carrier.orgId);
   await t.driver.post(
     `/api/shipments/${t.shipmentId}/trip-events`,
     tripEvent(env, 'pickup.loaded', { countedUnits: 10 }),
