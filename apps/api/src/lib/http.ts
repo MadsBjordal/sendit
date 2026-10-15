@@ -44,11 +44,13 @@ export interface OrgActor {
 /** The logged-in member of an organisation, optionally of a given kind and with a permission. */
 export function member(
   req: FastifyRequest,
-  opts: { kind?: OrgKind | OrgKind[]; permission?: string } = {},
+  opts: { kind?: OrgKind | OrgKind[]; permission?: string; allowDriver?: boolean } = {},
 ): OrgActor {
   const s = req.session;
   if (!s) throw unauthorised();
   if (!s.org || !s.role) throw forbidden('Choose an organisation first');
+  // Drivers use the driver endpoints only: no prices, loads or company settings
+  if (s.role === 'driver' && !opts.allowDriver) throw forbidden('Drivers use the driver app');
   const kinds = opts.kind ? (Array.isArray(opts.kind) ? opts.kind : [opts.kind]) : null;
   if (kinds && !kinds.includes(s.org.kind as OrgKind))
     throw forbidden('This is not available for your type of company');

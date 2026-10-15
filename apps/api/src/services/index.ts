@@ -6,6 +6,7 @@ import { DevSampleGeocoder } from '../adapters/geocoder';
 import { TestPaymentProvider } from '../adapters/payments';
 import { EstimateRouting } from '../adapters/routing';
 import { LocalDiskStorage, MemoryStorage } from '../adapters/storage';
+import { TestPayoutProvider } from '../adapters/payouts';
 
 export function makeContext(
   config: Config,
@@ -22,6 +23,7 @@ export function makeContext(
         : new LogEmailSender((m) => log.info(m)),
     routing: new EstimateRouting(),
     geocoder: new DevSampleGeocoder(),
+    payouts: new TestPayoutProvider(),
     storage:
       config.env === 'test' ? new MemoryStorage() : new LocalDiskStorage(config.fileStorageDir),
     log,

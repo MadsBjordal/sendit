@@ -923,6 +923,7 @@ export async function carrierBookings(ctx: Ctx, carrierOrgId: string) {
       status: s.status,
       shipper,
       vehicleId: b.vehicleId,
+      driverId: b.driverId,
       pickup: { ...l.pickup, point: undefined },
       delivery: { ...l.delivery, point: undefined },
       cargo: s.cargo,

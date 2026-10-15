@@ -2,3 +2,5 @@ pnpm-lock.yaml
 apps/api/drizzle
 .next
 dist
+apps/driver/.expo
+apps/driver/dist

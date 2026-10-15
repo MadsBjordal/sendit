@@ -454,16 +454,15 @@ type PricingConfig = {
 /** Pricing editor: saving always creates a new version (old versions stay for history). */
 function Pricing() {
   const { t, locale } = useI18n();
-  const { data, error, load, setError } =
-    useLoad<
-      Array<{
-        version: string;
-        config: PricingConfig;
-        active: boolean;
-        createdAt: string;
-        note: string | null;
-      }>
-    >('/api/admin/pricing');
+  const { data, error, load, setError } = useLoad<
+    Array<{
+      version: string;
+      config: PricingConfig;
+      active: boolean;
+      createdAt: string;
+      note: string | null;
+    }>
+  >('/api/admin/pricing');
   const [cfg, setCfg] = useState<PricingConfig | null>(null);
   const [json, setJson] = useState('');
   const [note, setNote] = useState('');

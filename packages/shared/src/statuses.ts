@@ -12,6 +12,7 @@ export const SHIPMENT_STATUSES = [
   'completed', // delivery accepted; carrier payout due
   'expired', // no carrier within the search time
   'cancelled',
+  'disputed', // the customer disputes the delivery: payout held until resolved
 ] as const;
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
 

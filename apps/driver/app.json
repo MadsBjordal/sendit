@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Project Freight Driver",
+    "slug": "project-freight-driver",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android", "web"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.projectfreight.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Your position is shared with the shipper only while you have an active job, to show progress and arrival time.",
+        "NSCameraUsageDescription": "Take photos of the goods at pickup and delivery."
+      }
+    },
+    "android": {
+      "package": "com.projectfreight.driver",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "CAMERA"]
+    },
+    "web": { "bundler": "metro" },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Your position is shared with the shipper only while you have an active job."
+        }
+      ]
+    ],
+    "extra": { "apiUrl": "http://localhost:4000" }
+  }
+}

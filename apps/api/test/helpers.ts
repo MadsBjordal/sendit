@@ -302,3 +302,79 @@ export async function publishedShipment(
 }
 
 export const key = () => `k-${uniq()}-${Math.random().toString(36).slice(2)}`;
+
+/** 1×1 transparent PNG */
+export const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** A ready carrier with one driver who has accepted the invitation (licence CE, valid). */
+export async function carrierWithDriver(
+  env: TestEnv,
+  opts: Parameters<typeof readyCarrier>[1] = {},
+) {
+  const carrier = await readyCarrier(env, opts);
+  const email = `driver-${uniq()}@example.com`;
+  const add = await carrier.client.post('/api/carrier/drivers', {
+    name: 'Dana Driver',
+    email,
+    phone: '+49 170 1',
+    licenceCategories: ['CE'],
+    licenceValidUntil: '2030-01-01',
+    cpcValidUntil: '2030-01-01',
+  });
+  if (add.statusCode !== 200) throw new Error(add.body);
+  const token = await lastEmailToken(env, email, 'invitation');
+  const driver = new Client(env);
+  const acc = await driver.post('/api/org/invitations/accept', {
+    token,
+    name: 'Dana Driver',
+    password: 'driver password long',
+  });
+  if (acc.statusCode !== 200) throw new Error(acc.body);
+  return { carrier, driver, driverId: add.data.id as string, driverEmail: email };
+}
+
+export async function upload(
+  env: TestEnv,
+  client: Client,
+  shipmentId: string,
+  kind = 'photo',
+  data = PNG,
+  type = 'image/png',
+) {
+  const res = await env.app.inject({
+    method: 'POST',
+    url: `/api/shipments/${shipmentId}/files?kind=${kind}`,
+    headers: { 'x-requested-with': 'freight', cookie: client.cookie, 'content-type': type },
+    payload: data,
+  });
+  return { statusCode: res.statusCode, data: res.json() };
+}
+
+/** Booked shipment with the driver assigned. */
+export async function bookedWithDriver(env: TestEnv) {
+  const shipper = await registerCompany(env, 'shipper');
+  const c = await carrierWithDriver(env);
+  const s = await publishedShipment(env, shipper.client);
+  const acc = await c.carrier.client.post(`/api/carrier/loads/${s.id}/accept`, {
+    vehicleId: c.carrier.vehicleId,
+    idempotencyKey: key(),
+  });
+  const assign = await c.carrier.client.post(`/api/carrier/bookings/${acc.data.bookingId}/assign`, {
+    driverId: c.driverId,
+  });
+  if (assign.statusCode !== 200) throw new Error(assign.body);
+  await env.jobs();
+  return { shipper, ...c, shipmentId: s.id, bookingId: acc.data.bookingId as string };
+}
+
+export const tripEvent = (env: TestEnv, action: string, extra: Record<string, unknown> = {}) => ({
+  clientEventId: key(),
+  action,
+  occurredAt: env.clock.now.toISOString(),
+  lat: 53.54,
+  lng: 9.99,
+  ...extra,
+});

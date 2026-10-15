@@ -11,10 +11,14 @@ import { authRoutes } from './routes/auth';
 import { carrierRoutes } from './routes/carrier';
 import { miscRoutes } from './routes/misc';
 import { shipperRoutes } from './routes/shipper';
+import { operationsRoutes } from './routes/operations';
 import { sessionFromToken } from './services/auth';
 // Job handlers register themselves on import
 import './services/booking';
 import './services/payments';
+import './services/trips';
+import './services/payouts';
+import './services/notifications';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -34,6 +38,12 @@ export async function buildApp(
       done(new AppError(400, 'bad_json', 'The request body is not valid JSON'), undefined);
     }
   });
+  // Photos, signatures and PDFs arrive as raw bytes; their content is checked in saveFile
+  app.addContentTypeParser(
+    ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    { parseAs: 'buffer' },
+    (_req, body, done) => done(null, body),
+  );
   // Zod does the validation; JSON schemas on routes are documentation only
   app.setValidatorCompiler(() => () => true);
 
@@ -102,6 +112,7 @@ export async function buildApp(
   shipperRoutes(app, ctx);
   carrierRoutes(app, ctx);
   adminRoutes(app, ctx);
+  operationsRoutes(app, ctx);
   miscRoutes(app, ctx);
   return app;
 }

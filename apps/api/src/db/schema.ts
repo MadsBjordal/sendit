@@ -762,6 +762,51 @@ export const carrierObligations = pgTable('carrier_obligations', {
   createdAt: createdAt(),
 });
 
+/** Where a carrier (or customs provider) is paid. Bank details are sensitive: shown masked, changes audited. */
+export const payoutAccounts = pgTable('payout_accounts', {
+  orgId: uuid('org_id')
+    .primaryKey()
+    .references(() => organisations.id),
+  holderName: text('holder_name').notNull(),
+  iban: text('iban').notNull(),
+  bic: text('bic'),
+  currency: text('currency').notNull().default('EUR'),
+  updatedBy: uuid('updated_by').notNull(),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+
+/** Money sent to a carrier for one obligation */
+export const payouts = pgTable(
+  'payouts',
+  {
+    id: id(),
+    obligationId: uuid('obligation_id')
+      .notNull()
+      .references(() => carrierObligations.id),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organisations.id),
+    amountMinor: minor('amount_minor').notNull(),
+    currency: text('currency').notNull(),
+    provider: text('provider').notNull(),
+    providerRef: text('provider_ref'),
+    /** pending (sent to the provider) → paid (arrived) | failed */
+    status: text('status').notNull(),
+    ibanMasked: text('iban_masked').notNull(),
+    failureReason: text('failure_reason'),
+    initiatedAt: ts('initiated_at').notNull(),
+    paidAt: ts('paid_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('payouts_org_idx').on(t.orgId),
+    // At most one live payout per obligation; failed ones stay as history
+    uniqueIndex('payouts_one_live')
+      .on(t.obligationId)
+      .where(sql`${t.status} in ('pending', 'paid')`),
+  ],
+);
+
 // ---------------------------------------------------------------- platform
 
 export const jobs = pgTable(

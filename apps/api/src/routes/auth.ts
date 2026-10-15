@@ -45,6 +45,24 @@ export function authRoutes(app: FastifyInstance, ctx: Ctx) {
     },
   );
 
+  // Mobile apps (driver app) keep the session token themselves and send it as "Authorization: Bearer"
+  app.post(
+    '/api/auth/token',
+    {
+      ...strict,
+      schema: {
+        tags: ['auth'],
+        summary: 'Log in from a mobile app: returns a bearer token',
+        body: doc(loginSchema),
+      },
+    },
+    async (req) => {
+      const input = parse(loginSchema, req.body);
+      const s = await auth.login(ctx, input, meta(req));
+      return { token: s.token, expiresAt: s.expiresAt };
+    },
+  );
+
   app.post('/api/auth/logout', { schema: { tags: ['auth'] } }, async (req, reply) => {
     if (req.session) await auth.logout(ctx, req.session.sessionId);
     reply.clearCookie(SESSION_COOKIE, { path: '/' });

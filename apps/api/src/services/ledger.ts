@@ -17,7 +17,10 @@ export type AccountCode =
   | 'carrier_payable'
   | 'platform_revenue_deferred'
   | 'platform_revenue'
-  | 'vat_payable';
+  | 'vat_payable'
+  | 'chargeback_receivable'
+  | 'customs_provider_payable'
+  | 'customs_revenue';
 
 export interface LedgerLine {
   account: AccountCode;
@@ -99,5 +102,5 @@ export async function balance(
     WHERE a.code = ${code} AND a.currency = ${currency}
       AND ${orgId ? sql`a.org_id = ${orgId}` : sql`a.org_id IS NULL`}`);
   const raw = Number(res.rows[0]?.total ?? 0);
-  return code === 'psp_clearing' || raw === 0 ? raw : -raw;
+  return code === 'psp_clearing' || code === 'chargeback_receivable' || raw === 0 ? raw : -raw;
 }

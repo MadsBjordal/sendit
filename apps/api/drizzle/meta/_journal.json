@@ -29,6 +29,20 @@
       "when": 1792093052544,
       "tag": "0003_carrier_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792093547351,
+      "tag": "0004_payouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792093548367,
+      "tag": "0005_operations_rules",
+      "breakpoints": true
     }
   ]
 }

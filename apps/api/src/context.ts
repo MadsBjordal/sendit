@@ -5,6 +5,7 @@ import type { Geocoder } from './adapters/geocoder';
 import type { PaymentProvider, TestPaymentProvider } from './adapters/payments';
 import type { RoutingProvider } from './adapters/routing';
 import type { FileStorage } from './adapters/storage';
+import type { PayoutProvider } from './adapters/payouts';
 
 /** Everything a service needs, passed in (so tests can swap the clock or an adapter). */
 export interface Ctx {
@@ -15,6 +16,7 @@ export interface Ctx {
   routing: RoutingProvider;
   geocoder: Geocoder;
   storage: FileStorage;
+  payouts: PayoutProvider;
   log: { info(msg: string): void; warn(msg: string): void; error(msg: string | object): void };
   now(): Date;
 }

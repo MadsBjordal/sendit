@@ -8,6 +8,8 @@ import { shipmentEvent } from './audit';
 import { enqueue, registerJob } from './jobs';
 import { post } from './ledger';
 import { notifyOrg } from './notifications';
+import { payoutEvent } from './payouts';
+import { chargebackEvent } from './chargebacks';
 
 const SYSTEM = { userId: null, orgId: null };
 
@@ -85,6 +87,10 @@ async function processEvent(
   },
 ): Promise<string> {
   if (event.type === 'refund.succeeded') return 'ignored';
+  if (event.type === 'payout.paid' || event.type === 'payout.failed')
+    return payoutEvent(ctx, tx, event.type, event.data.providerRef, event.data.reason);
+  if (event.type === 'dispute.created' || event.type === 'dispute.closed')
+    return chargebackEvent(ctx, tx, event.type, event.data);
   const [payment] = await tx
     .select()
     .from(payments)

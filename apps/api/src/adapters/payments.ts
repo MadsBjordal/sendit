@@ -15,7 +15,14 @@ export interface CreatePaymentResult {
 
 export interface ProviderEvent {
   id: string;
-  type: 'payment.succeeded' | 'payment.failed' | 'refund.succeeded';
+  type:
+    | 'payment.succeeded'
+    | 'payment.failed'
+    | 'refund.succeeded'
+    | 'payout.paid'
+    | 'payout.failed'
+    | 'dispute.created'
+    | 'dispute.closed';
   data: { providerRef: string; amountMinor: number; currency: string; reason?: string };
 }
 

@@ -3,7 +3,15 @@ import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import type { MemberRole, RegisterInput } from '@freight/shared';
 import type { Ctx } from '../context';
 import type { DbOrTx } from '../db/client';
-import { invitations, memberships, organisations, sessions, users, userTokens } from '../db/schema';
+import {
+  drivers,
+  invitations,
+  memberships,
+  organisations,
+  sessions,
+  users,
+  userTokens,
+} from '../db/schema';
 import { newToken, newTotpSecret, sha256, verifyTotp } from '../lib/crypto';
 import { AppError, badRequest, conflict, notFound, unauthorised } from '../lib/errors';
 import { audit, type Actor } from './audit';
@@ -463,6 +471,12 @@ export async function acceptInvitation(
       { type: 'organisation', id: inv.orgId },
       { role: inv.role },
     );
+    // A driver invitation links the carrier's driver profile to this login
+    if (inv.role === 'driver')
+      await tx
+        .update(drivers)
+        .set({ userId })
+        .where(and(eq(drivers.orgId, inv.orgId), sql`lower(${drivers.email}) = ${inv.email}`));
     const session = await createSession(ctx, tx, userId, {
       orgId: inv.orgId,
       staff: false,

@@ -4,6 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/auth';
 import { RouteMap } from '@/components/RouteMap';
+import { TripPanel } from '@/components/TripPanel';
+import { Messages } from '@/components/Messages';
 import { Alert, Badge, Card, ErrorText, PageTitle, Spinner, StatusBadge } from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { api, post } from '@/lib/api';
@@ -300,6 +302,18 @@ export default function ShipmentPage() {
         />
       </div>
 
+      <TripPanel
+        shipmentId={s.id}
+        pickup={{ lat: s.pickup.lat, lng: s.pickup.lng, label: s.pickup.city, kind: 'pickup' }}
+        delivery={{
+          lat: s.delivery.lat,
+          lng: s.delivery.lng,
+          label: s.delivery.city,
+          kind: 'delivery',
+        }}
+        onChanged={load}
+      />
+      {s.booking && <Messages shipmentId={s.id} />}
       <Card>
         <div className="mb-2 font-semibold">{t('detail.customs')}</div>
         <div className="flex items-center gap-2">

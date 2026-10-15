@@ -1,7 +1,18 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { TripPanel } from '@/components/TripPanel';
+import { Messages } from '@/components/Messages';
 import { useRequireAuth } from '@/components/auth';
-import { Badge, Card, Empty, ErrorText, PageTitle, Spinner, StatusBadge } from '@/components/ui';
+import {
+  Badge,
+  Card,
+  Empty,
+  ErrorText,
+  PageTitle,
+  problemText,
+  Spinner,
+  StatusBadge,
+} from '@/components/ui';
 import { useI18n, type MessageKey } from '@/i18n';
 import { api, post } from '@/lib/api';
 import { dateTime, km, money } from '@/lib/format';
@@ -15,6 +26,8 @@ interface Job {
     addressLine: string;
     postcode: string;
     city: string;
+    lat: number;
+    lng: number;
     country: string;
     windowStart: string;
     windowEnd: string;
@@ -26,6 +39,8 @@ interface Job {
     addressLine: string;
     postcode: string;
     city: string;
+    lat: number;
+    lng: number;
     country: string;
     windowStart: string;
     windowEnd: string;
@@ -41,6 +56,8 @@ interface Job {
   payoutMinor: number;
   currency: string;
   guarantee: { status: string; funded: boolean; terms: string } | null;
+  driverId: string | null;
+  shipmentId: string;
 }
 interface Offer {
   id: string;
@@ -153,8 +170,130 @@ export default function Bookings() {
             )}
           </div>
           {j.guarantee && <p className="mt-3 text-xs text-ink-soft">{j.guarantee.terms}</p>}
+          <JobActions job={j} onChanged={load} />
         </Card>
       ))}
+    </div>
+  );
+}
+
+interface DriverOption {
+  id: string;
+  name: string;
+  phone: string | null;
+  deadheadKm: number;
+  locationSource: string;
+  problems: Array<{ code: string }>;
+  assigned: boolean;
+}
+
+function JobActions({ job, onChanged }: { job: Job; onChanged(): void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState<'assign' | 'trip' | null>(null);
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-3">
+      <div className="flex flex-wrap gap-2">
+        {['booked', 'in_transit'].includes(job.status) && (
+          <button
+            className={
+              job.driverId ? 'btn-secondary px-3 py-1.5 text-sm' : 'btn-primary px-3 py-1.5 text-sm'
+            }
+            onClick={() => setOpen(open === 'assign' ? null : 'assign')}
+          >
+            {job.driverId ? t('jobs.changeDriver') : t('jobs.assignDriver')}
+          </button>
+        )}
+        <button
+          className="btn-ghost px-3 py-1.5 text-sm"
+          onClick={() => setOpen(open === 'trip' ? null : 'trip')}
+        >
+          {t('jobs.progress')}
+        </button>
+      </div>
+      {open === 'assign' && (
+        <AssignDriver bookingId={job.bookingId} onDone={() => (setOpen(null), onChanged())} />
+      )}
+      {open === 'trip' && (
+        <div className="mt-3 space-y-3">
+          <TripPanel
+            shipmentId={job.shipmentId}
+            pickup={{
+              lat: job.pickup.lat,
+              lng: job.pickup.lng,
+              label: job.pickup.city,
+              kind: 'pickup',
+            }}
+            delivery={{
+              lat: job.delivery.lat,
+              lng: job.delivery.lng,
+              label: job.delivery.city,
+              kind: 'delivery',
+            }}
+          />
+          <Messages shipmentId={job.shipmentId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Like the "Assign a driver" screen: drivers with their empty kilometres to the pickup, eligible first. */
+function AssignDriver({ bookingId, onDone }: { bookingId: string; onDone(): void }) {
+  const { t } = useI18n();
+  const [list, setList] = useState<DriverOption[] | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  useEffect(() => {
+    api<DriverOption[]>(`/api/carrier/bookings/${bookingId}/assign-options`)
+      .then(setList)
+      .catch(setError);
+  }, [bookingId]);
+  if (error) return <ErrorText error={error} />;
+  if (!list) return <Spinner />;
+  if (list.length === 0) return <p className="mt-3 text-sm text-ink-soft">{t('jobs.noDrivers')}</p>;
+  const initials = (n: string) =>
+    n
+      .split(' ')
+      .map((p) => p[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+  return (
+    <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200">
+      {list.map((d) => {
+        const blocking = d.problems.filter((p) => p.code !== 'driver_busy');
+        return (
+          <button
+            key={d.id}
+            disabled={blocking.length > 0}
+            onClick={() =>
+              post(`/api/carrier/bookings/${bookingId}/assign`, { driverId: d.id })
+                .then(onDone)
+                .catch(setError)
+            }
+            className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-slate-50 disabled:opacity-50"
+          >
+            <span
+              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold ${d.assigned ? 'bg-ink text-white' : 'bg-slate-100'}`}
+            >
+              {d.assigned ? '✓' : initials(d.name)}
+            </span>
+            <span className="flex-1">
+              <span className="block font-medium">{d.name}</span>
+              <span className="block text-xs text-ink-soft">
+                {blocking.length
+                  ? blocking.map((p) => problemText(t, p)).join(' · ')
+                  : d.problems.length
+                    ? t('jobs.busy')
+                    : t('jobs.available')}
+              </span>
+            </span>
+            <span className="text-right text-xs text-ink-soft">
+              {t('jobs.deadhead')}
+              <span className="block font-semibold text-ink">{d.deadheadKm} km</span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
