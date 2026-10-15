@@ -104,16 +104,16 @@ importers:
         version: 1.9.4
       next:
         specifier: 15.5.27
-        version: 15.5.27(@types/node@22.20.5)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 15.5.27(@types/node@22.20.5)(react-dom@19.3.0(react@19.0.0))(react@19.0.0)
       react:
         specifier: 19.0.0
         version: 19.0.0
       react-dom:
-        specifier: 19.0.0
-        version: 19.0.0(react@19.0.0)
+        specifier: 19.3.0
+        version: 19.3.0(react@19.0.0)
       react-leaflet:
         specifier: 5.0.0
-        version: 5.0.0(leaflet@1.9.4)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 5.0.0(leaflet@1.9.4)(react-dom@19.3.0(react@19.0.0))(react@19.0.0)
     devDependencies:
       '@types/leaflet':
         specifier: 1.9.15
@@ -125,8 +125,8 @@ importers:
         specifier: 19.0.7
         version: 19.0.7
       '@types/react-dom':
-        specifier: 19.0.3
-        version: 19.0.3(@types/react@19.0.7)
+        specifier: 19.3.0
+        version: 19.3.0(@types/react@19.0.7)
       autoprefixer:
         specifier: 10.4.20
         version: 10.4.20(postcss@8.5.28)
@@ -1346,10 +1346,10 @@ packages:
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
 
-  '@types/react-dom@19.0.3':
-    resolution: {integrity: sha512-0Knk+HJiMP/qOZgMyNFamlIjw9OFCsyC2ZbigmEEyXXixgre6IQpm/4V+r3qH4GC1JPvRJKInw+on2rV6YZLeA==}
+  '@types/react-dom@19.3.0':
+    resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
     peerDependencies:
-      '@types/react': ^19.0.0
+      '@types/react': ^19.3.0
 
   '@types/react@19.0.7':
     resolution: {integrity: sha512-MoFsEJKkAtZCrC1r6CM8U22GzhG7u2Wir8ons/aCKH6MBdD1ibV24zOSSkdZVUKqN5i396zG5VKLYZ3yaUZdLA==}
@@ -2788,10 +2788,10 @@ packages:
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
 
-  react-dom@19.0.0:
-    resolution: {integrity: sha512-4GV5sHFG0e/0AD4X+ySy6UJd3jVl1iNsNHdpad0qhABJ11twS3TTBnseqsKurKcsNqCEFeGL3uLpVChpIO3QfQ==}
+  react-dom@19.3.0:
+    resolution: {integrity: sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==}
     peerDependencies:
-      react: ^19.0.0
+      react: ^19.3.0
 
   react-leaflet@5.0.0:
     resolution: {integrity: sha512-CWbTpr5vcHw5bt9i4zSlPEVQdTVcML390TjeDG0cK59z1ylexpqC6M1PJFjV8jD7CF+ACBFsLIDs6DRMoLEofw==}
@@ -2902,8 +2902,8 @@ packages:
     resolution: {integrity: sha512-5LBh1Tls8c9xgGjw3QrMwETmTMVk0oFgvrFSvWx62llR2hcEInrKNZ2GZCCuuy2lvWrdl5jhbpeqc5hRYKFOcw==}
     engines: {node: '>=10'}
 
-  scheduler@0.25.0:
-    resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
+  scheduler@0.28.0:
+    resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
   secure-json-parse@4.1.1:
     resolution: {integrity: sha512-lnd81MQEZKjhW/Gd2TQqdd4XP6QYNdDW/EP+I7nTrFHP9y2LmaGPIHk9xsnzcOiEr1c39c/e84xFgGviQKBTRw==}
@@ -4030,11 +4030,11 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@react-leaflet/core@3.0.0(leaflet@1.9.4)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@react-leaflet/core@3.0.0(leaflet@1.9.4)(react-dom@19.3.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       leaflet: 1.9.4
       react: 19.0.0
-      react-dom: 19.0.0(react@19.0.0)
+      react-dom: 19.3.0(react@19.0.0)
 
   '@rollup/rollup-android-arm-eabi@4.64.7':
     optional: true
@@ -4141,7 +4141,7 @@ snapshots:
       pg-protocol: 1.16.1
       pg-types: 2.2.0
 
-  '@types/react-dom@19.0.3(@types/react@19.0.7)':
+  '@types/react-dom@19.3.0(@types/react@19.0.7)':
     dependencies:
       '@types/react': 19.0.7
 
@@ -5479,14 +5479,14 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next@15.5.27(@types/node@22.20.5)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  next@15.5.27(@types/node@22.20.5)(react-dom@19.3.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@next/env': 15.5.27
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001816
       postcss: 8.5.28
       react: 19.0.0
-      react-dom: 19.0.0(react@19.0.0)
+      react-dom: 19.3.0(react@19.0.0)
       styled-jsx: 5.1.6(react@19.0.0)
     optionalDependencies:
       '@next/swc-darwin-arm64': 15.5.27
@@ -5718,17 +5718,17 @@ snapshots:
 
   quick-format-unescaped@4.0.4: {}
 
-  react-dom@19.0.0(react@19.0.0):
+  react-dom@19.3.0(react@19.0.0):
     dependencies:
       react: 19.0.0
-      scheduler: 0.25.0
+      scheduler: 0.28.0
 
-  react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+  react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.3.0(react@19.0.0))(react@19.0.0):
     dependencies:
-      '@react-leaflet/core': 3.0.0(leaflet@1.9.4)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@react-leaflet/core': 3.0.0(leaflet@1.9.4)(react-dom@19.3.0(react@19.0.0))(react@19.0.0)
       leaflet: 1.9.4
       react: 19.0.0
-      react-dom: 19.0.0(react@19.0.0)
+      react-dom: 19.3.0(react@19.0.0)
 
   react@19.0.0: {}
 
@@ -5872,7 +5872,7 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
 
-  scheduler@0.25.0: {}
+  scheduler@0.28.0: {}
 
   secure-json-parse@4.1.1: {}
 
