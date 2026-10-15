@@ -15,6 +15,7 @@ import {
 import { FILE_KINDS, readFileFor, saveFile } from '../services/files';
 import { listMessages, sendMessage } from '../services/messages';
 import { listInvoices } from '../services/invoices';
+import { carrierPerformance, returnLoads } from '../services/returnLoads';
 import {
   carrierEarnings,
   payoutAccountSchema,
@@ -84,6 +85,33 @@ export function operationsRoutes(app: FastifyInstance, ctx: Ctx) {
     const { driverId } = parse(z.object({ driverId: z.string().uuid() }), req.body);
     return assignDriver(ctx, a, id, driverId);
   });
+
+  app.get(
+    '/api/carrier/bookings/:id/return-loads',
+    {
+      schema: {
+        tags: ['carrier'],
+        summary: 'Loads to take after this job instead of driving back empty',
+      },
+    },
+    async (req) => {
+      const a = member(req, { kind: 'carrier' });
+      const { id } = parse(uuid, req.params);
+      const { radiusKm } = parse(
+        z.object({ radiusKm: z.coerce.number().int().min(10).max(400).default(150) }),
+        req.query,
+      );
+      return returnLoads(ctx, a.orgId, id, radiusKm);
+    },
+  );
+  app.get(
+    '/api/carrier/performance',
+    { schema: { tags: ['carrier'], summary: 'On-time, tracking and claims record' } },
+    async (req) => {
+      const a = member(req, { kind: 'carrier' });
+      return carrierPerformance(ctx, a.orgId);
+    },
+  );
 
   // ---- money for carriers
   app.get('/api/carrier/earnings', { schema: { tags: ['carrier'] } }, async (req) => {

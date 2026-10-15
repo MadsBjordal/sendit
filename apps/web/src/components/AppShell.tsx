@@ -22,6 +22,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/carrier/fleet', key: 'nav.fleet' },
     { href: '/carrier/drivers', key: 'nav.drivers' },
     { href: '/carrier/earnings', key: 'nav.earnings' },
+    { href: '/carrier/performance', key: 'nav.performance' },
     { href: '/invoices', key: 'nav.invoices' },
     { href: '/carrier/verification', key: 'nav.verification' },
     { href: '/team', key: 'nav.team' },

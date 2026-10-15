@@ -819,6 +819,29 @@ export const en = {
   'error.deduction_too_high': 'The carrier’s part is too high',
   'error.already_requested': 'Your request is already being handled',
   'error.already_resolved': 'This has already been decided',
+  // --- milestone 7
+  'jobs.returnLoads': 'Loads back',
+  'jobs.returnLoadsHint':
+    'Open loads starting near this delivery, after it, that fit this truck. Best first: brings you home, little empty driving, good pay per km.',
+  'jobs.noReturnLoads': 'No loads near this delivery right now.',
+  'jobs.emptyKm': '{km} km empty',
+  'jobs.closerHome': '{km} km closer to base',
+  'nav.performance': 'Performance',
+  'perf.subtitle': 'Your record on this platform, from your own jobs.',
+  'perf.standing': 'Standing',
+  'perf.standing.new': 'New: fewer than 3 deliveries',
+  'perf.standing.good': 'Good',
+  'perf.standing.fair': 'Fair',
+  'perf.standing.at_risk': 'At risk',
+  'perf.counts': '{jobs} jobs, {delivered} delivered',
+  'perf.onTimeDelivery': 'On-time delivery',
+  'perf.onTimeDeliveryHint': 'Delivered within the delivery window.',
+  'perf.onTimePickup': 'On-time pickup',
+  'perf.onTimePickupHint': 'Collected within the pickup window.',
+  'perf.tracking': 'Tracking',
+  'perf.trackingHint': 'Jobs with live location shared during the trip.',
+  'perf.claims': 'Claims',
+  'perf.claimsHint': 'Deliveries where a dispute ended with a deduction.',
 };
 
 export type MessageKey = keyof typeof en;

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { TripPanel } from '@/components/TripPanel';
 import { Messages } from '@/components/Messages';
@@ -189,7 +190,7 @@ interface DriverOption {
 
 function JobActions({ job, onChanged }: { job: Job; onChanged(): void }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState<'assign' | 'trip' | null>(null);
+  const [open, setOpen] = useState<'assign' | 'trip' | 'return' | null>(null);
   return (
     <div className="mt-4 border-t border-slate-100 pt-3">
       <div className="flex flex-wrap gap-2">
@@ -209,7 +210,16 @@ function JobActions({ job, onChanged }: { job: Job; onChanged(): void }) {
         >
           {t('jobs.progress')}
         </button>
+        {['booked', 'in_transit'].includes(job.status) && (
+          <button
+            className="btn-ghost px-3 py-1.5 text-sm"
+            onClick={() => setOpen(open === 'return' ? null : 'return')}
+          >
+            {t('jobs.returnLoads')}
+          </button>
+        )}
       </div>
+      {open === 'return' && <ReturnLoads bookingId={job.bookingId} />}
       {open === 'assign' && (
         <AssignDriver bookingId={job.bookingId} onDone={() => (setOpen(null), onChanged())} />
       )}
@@ -294,6 +304,74 @@ function AssignDriver({ bookingId, onDone }: { bookingId: string; onDone(): void
           </button>
         );
       })}
+    </div>
+  );
+}
+
+interface ReturnLoad {
+  shipmentId: string;
+  number: string;
+  from: { city: string; country: string; windowStart: string };
+  to: { city: string; country: string };
+  payoutMinor: number;
+  currency: string;
+  emptyKm: number;
+  loadedKm: number;
+  closerToBaseKm: number;
+  perKmMinor: number;
+}
+
+/** Loads to take after this job instead of driving back empty. Accepting is the normal booking. */
+function ReturnLoads({ bookingId }: { bookingId: string }) {
+  const { t, locale } = useI18n();
+  const [list, setList] = useState<ReturnLoad[] | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  useEffect(() => {
+    api<ReturnLoad[]>(`/api/carrier/bookings/${bookingId}/return-loads`)
+      .then(setList)
+      .catch(setError);
+  }, [bookingId]);
+  if (error) return <ErrorText error={error} />;
+  if (!list) return <Spinner />;
+  return (
+    <div className="mt-3">
+      <p className="mb-2 text-xs text-ink-soft">{t('jobs.returnLoadsHint')}</p>
+      {list.length === 0 ? (
+        <p className="text-sm text-ink-soft">{t('jobs.noReturnLoads')}</p>
+      ) : (
+        <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          {list.map((l) => (
+            <Link
+              key={l.shipmentId}
+              href={`/carrier/loads?load=${l.shipmentId}`}
+              className="flex flex-wrap items-center gap-3 px-3 py-2 hover:bg-slate-50"
+            >
+              <span className="flex-1">
+                <span className="block font-medium">
+                  {l.from.city} → {l.to.city}
+                </span>
+                <span className="block text-xs text-ink-soft">
+                  {l.number} · {dateTime(l.from.windowStart, locale)}
+                </span>
+              </span>
+              <span className="text-xs text-ink-soft">
+                {t('jobs.emptyKm', { km: l.emptyKm })}
+                {l.closerToBaseKm > 0 && (
+                  <span className="block text-green-700">
+                    {t('jobs.closerHome', { km: l.closerToBaseKm })}
+                  </span>
+                )}
+              </span>
+              <span className="text-right font-semibold">
+                {money(l.payoutMinor, l.currency, locale)}
+                <span className="block text-xs font-normal text-ink-soft">
+                  {money(l.perKmMinor, l.currency, locale)}/km
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

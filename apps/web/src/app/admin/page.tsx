@@ -779,22 +779,21 @@ function Pricing() {
 
 function Disputes() {
   const { t, locale } = useI18n();
-  const { data, error, load, setError } =
-    useLoad<
-      Array<{
-        id: string;
-        shipmentId: string;
-        number: number;
-        shipper: string;
-        kind: string;
-        description: string;
-        status: string;
-        totalMinor: number;
-        payoutMinor: number;
-        evidenceFileIds: string[];
-        createdAt: string;
-      }>
-    >('/api/admin/disputes');
+  const { data, error, load, setError } = useLoad<
+    Array<{
+      id: string;
+      shipmentId: string;
+      number: number;
+      shipper: string;
+      kind: string;
+      description: string;
+      status: string;
+      totalMinor: number;
+      payoutMinor: number;
+      evidenceFileIds: string[];
+      createdAt: string;
+    }>
+  >('/api/admin/disputes');
   const [form, setForm] = useState<
     Record<string, { refund: string; deduction: string; note: string }>
   >({});
@@ -912,17 +911,16 @@ function Disputes() {
 
 function Fraud() {
   const { t, locale } = useI18n();
-  const { data, error, load, setError } =
-    useLoad<
-      Array<{
-        id: string;
-        kind: string;
-        severity: string;
-        orgName: string | null;
-        details: Record<string, unknown>;
-        createdAt: string;
-      }>
-    >('/api/admin/fraud-alerts');
+  const { data, error, load, setError } = useLoad<
+    Array<{
+      id: string;
+      kind: string;
+      severity: string;
+      orgName: string | null;
+      details: Record<string, unknown>;
+      createdAt: string;
+    }>
+  >('/api/admin/fraud-alerts');
   if (error && !data) return <ErrorText error={error} />;
   if (!data) return <Spinner />;
   if (data.length === 0) return <Empty title={t('admin.noAlerts')} />;

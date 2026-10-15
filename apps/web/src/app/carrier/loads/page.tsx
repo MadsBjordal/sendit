@@ -63,6 +63,11 @@ export default function Loads() {
   const [level, setLevel] = useState('');
   const [sort, setSort] = useState<Sort>('nearest');
   const [open, setOpen] = useState<string | null>(null);
+  // Opened from a return-load suggestion: /carrier/loads?load=<id>
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('load');
+    if (id) setOpen(id);
+  }, []);
 
   const load = useCallback(
     () => api<Board>('/api/carrier/loads').then(setBoard).catch(setError),
