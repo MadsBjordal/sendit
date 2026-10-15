@@ -20,3 +20,11 @@ export const forbidden = (message = 'You do not have access to this') =>
 export const notFound = (message = 'Not found') => new AppError(404, 'not_found', message);
 export const conflict = (code: string, message: string, details?: unknown) =>
   new AppError(409, code, message, details);
+
+/** The PostgreSQL error behind a failed query (Drizzle wraps it in `cause`). */
+export function pgError(err: unknown): { code?: string; constraint?: string; message?: string } {
+  const e = err as { code?: string; cause?: unknown };
+  if (e && typeof e === 'object' && !e.code && e.cause && typeof e.cause === 'object')
+    return e.cause as { code?: string; constraint?: string };
+  return (e ?? {}) as { code?: string; constraint?: string };
+}

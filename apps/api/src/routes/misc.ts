@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Ctx } from '../context';
 import { notifications, users } from '../db/schema';
@@ -10,15 +10,25 @@ import { handleWebhook } from '../services/payments';
 import { listCountries } from '../services/admin';
 
 export function miscRoutes(app: FastifyInstance, ctx: Ctx) {
-  app.get('/api/health', { schema: { tags: ['platform'] } }, async () => {
-    await ctx.db.execute('select 1' as never);
-    return {
-      ok: true,
-      brand: ctx.config.brand.name,
-      paymentProvider: ctx.config.paymentProvider,
-      routing: ctx.config.routingProvider,
-    };
-  });
+  app.get(
+    '/api/health',
+    { schema: { tags: ['platform'], summary: 'Liveness and readiness (database, job queue)' } },
+    async (_req, reply) => {
+      const q = await ctx.db.execute<{ dead: number; overdue: number }>(
+        sql`SELECT count(*) FILTER (WHERE status = 'dead')::int AS dead, count(*) FILTER (WHERE status = 'queued' AND run_at < now() - interval '10 minutes')::int AS overdue FROM jobs`,
+      );
+      const jobs = q.rows[0]!;
+      // Overdue jobs mean the worker is not running: report unhealthy so monitoring alerts
+      if (Number(jobs.overdue) > 0) reply.code(503);
+      return {
+        ok: Number(jobs.overdue) === 0,
+        brand: ctx.config.brand.name,
+        paymentProvider: ctx.config.paymentProvider,
+        routing: ctx.config.routingProvider,
+        jobs: { dead: Number(jobs.dead), overdue: Number(jobs.overdue) },
+      };
+    },
+  );
 
   app.get(
     '/api/countries',

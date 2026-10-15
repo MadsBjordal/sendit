@@ -20,7 +20,7 @@ import {
   priceSnapshots,
   shipments,
 } from '../db/schema';
-import { conflict, forbidden, notFound } from '../lib/errors';
+import { conflict, forbidden, notFound, pgError } from '../lib/errors';
 import { audit, shipmentEvent, type Actor } from './audit';
 import {
   carrierProblems,
@@ -224,17 +224,12 @@ export async function acceptLoad(
       return result;
     });
   } catch (err) {
+    const pg = pgError(err);
     // Only reachable if the lock was somehow bypassed: the unique index decides
-    if (
-      (err as { code?: string; constraint?: string }).code === '23505' &&
-      String((err as { constraint?: string }).constraint).startsWith('bookings_shipment_id')
-    )
+    if (pg.code === '23505' && String(pg.constraint).startsWith('bookings_shipment_id'))
       return { result: 'already_assigned' };
     // The same idempotency key sent twice at once: return the stored answer
-    if (
-      (err as { code?: string; constraint?: string }).code === '23505' &&
-      (err as { constraint?: string }).constraint === 'accept_attempts_idem_key'
-    ) {
+    if (pg.code === '23505' && pg.constraint === 'accept_attempts_idem_key') {
       const [prev] = await ctx.db
         .select()
         .from(acceptAttempts)

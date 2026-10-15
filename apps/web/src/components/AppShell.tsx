@@ -13,6 +13,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/shipments', key: 'nav.shipments' },
     { href: '/invoices', key: 'nav.invoices' },
     { href: '/team', key: 'nav.team' },
+    { href: '/support', key: 'nav.support' },
     { href: '/settings', key: 'nav.settings' },
   ],
   carrier: [
@@ -24,6 +25,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/invoices', key: 'nav.invoices' },
     { href: '/carrier/verification', key: 'nav.verification' },
     { href: '/team', key: 'nav.team' },
+    { href: '/support', key: 'nav.support' },
     { href: '/settings', key: 'nav.settings' },
   ],
   customs_provider: [
@@ -33,6 +35,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/carrier/earnings', key: 'nav.earnings' },
     { href: '/invoices', key: 'nav.invoices' },
     { href: '/team', key: 'nav.team' },
+    { href: '/support', key: 'nav.support' },
   ],
   staff: [{ href: '/admin', key: 'nav.admin' }],
 };

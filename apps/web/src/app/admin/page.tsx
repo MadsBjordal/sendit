@@ -1,10 +1,12 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { useRequireAuth } from '@/components/auth';
+import { SupportDesk } from '@/components/SupportDesk';
 import {
   Alert,
   Badge,
   Card,
+  Empty,
   ErrorText,
   Field,
   PageTitle,
@@ -15,7 +17,18 @@ import { useI18n, type MessageKey } from '@/i18n';
 import { api, ApiError, post } from '@/lib/api';
 import { date, dateTime, money } from '@/lib/format';
 
-type Tab = 'organisations' | 'shipments' | 'countries' | 'pricing' | 'finance' | 'audit';
+type Tab =
+  | 'organisations'
+  | 'shipments'
+  | 'disputes'
+  | 'fraud'
+  | 'support'
+  | 'analytics'
+  | 'countries'
+  | 'pricing'
+  | 'finance'
+  | 'privacy'
+  | 'audit';
 
 export default function Admin() {
   const { me, refresh } = useRequireAuth();
@@ -28,22 +41,39 @@ export default function Admin() {
     <div>
       <PageTitle title={t('nav.admin')} />
       <div className="mb-5 flex flex-wrap gap-1 border-b border-slate-200">
-        {(['organisations', 'shipments', 'countries', 'pricing', 'finance', 'audit'] as const).map(
-          (k) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${tab === k ? 'border-brand text-brand' : 'border-transparent text-ink-soft'}`}
-            >
-              {t(`admin.tab.${k}` as MessageKey)}
-            </button>
-          ),
-        )}
+        {(
+          [
+            'organisations',
+            'shipments',
+            'disputes',
+            'fraud',
+            'support',
+            'analytics',
+            'countries',
+            'pricing',
+            'finance',
+            'privacy',
+            'audit',
+          ] as const
+        ).map((k) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${tab === k ? 'border-brand text-brand' : 'border-transparent text-ink-soft'}`}
+          >
+            {t(`admin.tab.${k}` as MessageKey)}
+          </button>
+        ))}
       </div>
       {tab === 'organisations' && <Organisations />}
       {tab === 'shipments' && <Shipments />}
       {tab === 'countries' && <Countries />}
       {tab === 'pricing' && <Pricing />}
+      {tab === 'disputes' && <Disputes />}
+      {tab === 'fraud' && <Fraud />}
+      {tab === 'support' && <SupportDesk staff />}
+      {tab === 'analytics' && <Analytics />}
+      {tab === 'privacy' && <Privacy />}
       {tab === 'finance' && <Finance />}
       {tab === 'audit' && <Audit />}
     </div>
@@ -743,6 +773,404 @@ function Pricing() {
           </div>
         ))}
       </Card>
+    </div>
+  );
+}
+
+function Disputes() {
+  const { t, locale } = useI18n();
+  const { data, error, load, setError } =
+    useLoad<
+      Array<{
+        id: string;
+        shipmentId: string;
+        number: number;
+        shipper: string;
+        kind: string;
+        description: string;
+        status: string;
+        totalMinor: number;
+        payoutMinor: number;
+        evidenceFileIds: string[];
+        createdAt: string;
+      }>
+    >('/api/admin/disputes');
+  const [form, setForm] = useState<
+    Record<string, { refund: string; deduction: string; note: string }>
+  >({});
+  if (error && !data) return <ErrorText error={error} />;
+  if (!data) return <Spinner />;
+  if (data.length === 0) return <Empty title={t('admin.noDisputes')} />;
+  return (
+    <div className="space-y-3">
+      <ErrorText error={error} />
+      {data.map((d) => {
+        const f = form[d.id] ?? { refund: '0', deduction: '0', note: '' };
+        const set = (patch: Partial<typeof f>) => setForm({ ...form, [d.id]: { ...f, ...patch } });
+        const cents = (v: string) => Math.round(Number(v.replace(',', '.') || 0) * 100);
+        return (
+          <Card key={d.id}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <div className="font-semibold">
+                  PF-{String(d.number).padStart(6, '0')} · {d.shipper}
+                </div>
+                <div className="text-sm text-ink-soft">
+                  {t(`dispute.kind.${d.kind}` as MessageKey)} · {dateTime(d.createdAt, locale)}
+                </div>
+              </div>
+              <StatusBadge status={`dispute_${d.status}`} />
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-sm">{d.description}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {d.evidenceFileIds.map((f) => (
+                <a
+                  key={f}
+                  className="text-sm text-brand"
+                  href={`/api/files/${f}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t('admin.evidence')}
+                </a>
+              ))}
+              <a className="text-sm text-brand" href={`/admin/shipments/${d.shipmentId}`}>
+                {t('admin.openShipment')}
+              </a>
+            </div>
+            <div className="mt-1 text-xs text-ink-soft">
+              {t('admin.paidPayout', {
+                paid: money(d.totalMinor, 'EUR', locale),
+                payout: money(d.payoutMinor, 'EUR', locale),
+              })}
+            </div>
+            {d.status === 'open' && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                <Field label={t('admin.refundCustomer')}>
+                  <input
+                    className="input"
+                    inputMode="decimal"
+                    value={f.refund}
+                    onChange={(e) => set({ refund: e.target.value })}
+                  />
+                </Field>
+                <Field label={t('admin.carrierPart')}>
+                  <input
+                    className="input"
+                    inputMode="decimal"
+                    value={f.deduction}
+                    onChange={(e) => set({ deduction: e.target.value })}
+                  />
+                </Field>
+                <Field label={t('admin.note')}>
+                  <input
+                    className="input"
+                    value={f.note}
+                    onChange={(e) => set({ note: e.target.value })}
+                  />
+                </Field>
+                <div className="flex items-end gap-2">
+                  <button
+                    className="btn-primary px-3"
+                    disabled={f.note.length < 3}
+                    onClick={() =>
+                      post(`/api/admin/disputes/${d.id}/resolve`, {
+                        decision: 'resolved',
+                        customerRefundMinor: cents(f.refund),
+                        carrierDeductionMinor: cents(f.deduction),
+                        note: f.note,
+                      })
+                        .then(load)
+                        .catch(setError)
+                    }
+                  >
+                    {t('admin.settle')}
+                  </button>
+                  <button
+                    className="btn-secondary px-3"
+                    disabled={f.note.length < 3}
+                    onClick={() =>
+                      post(`/api/admin/disputes/${d.id}/resolve`, {
+                        decision: 'rejected',
+                        note: f.note,
+                      })
+                        .then(load)
+                        .catch(setError)
+                    }
+                  >
+                    {t('admin.reject')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+function Fraud() {
+  const { t, locale } = useI18n();
+  const { data, error, load, setError } =
+    useLoad<
+      Array<{
+        id: string;
+        kind: string;
+        severity: string;
+        orgName: string | null;
+        details: Record<string, unknown>;
+        createdAt: string;
+      }>
+    >('/api/admin/fraud-alerts');
+  if (error && !data) return <ErrorText error={error} />;
+  if (!data) return <Spinner />;
+  if (data.length === 0) return <Empty title={t('admin.noAlerts')} />;
+  const review = (id: string, decision: 'dismissed' | 'confirmed', suspend = false) => {
+    const note = prompt(t('admin.why'));
+    if (note !== null)
+      post(`/api/admin/fraud-alerts/${id}/review`, { decision, note, suspend })
+        .then(load)
+        .catch(setError);
+  };
+  return (
+    <div className="space-y-3">
+      <ErrorText error={error} />
+      {data.map((a) => (
+        <Card key={a.id}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="font-semibold">{t(`fraud.${a.kind}` as MessageKey)}</div>
+              <div className="text-sm text-ink-soft">
+                {a.orgName} · {dateTime(a.createdAt, locale)}
+              </div>
+            </div>
+            <Badge
+              tone={a.severity === 'high' ? 'red' : a.severity === 'medium' ? 'amber' : 'gray'}
+            >
+              {a.severity}
+            </Badge>
+          </div>
+          <pre className="mt-2 overflow-x-auto rounded bg-slate-50 p-2 text-xs">
+            {JSON.stringify(a.details)}
+          </pre>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              className="btn-secondary px-3 py-1.5 text-sm"
+              onClick={() => review(a.id, 'dismissed')}
+            >
+              {t('admin.dismiss')}
+            </button>
+            <button
+              className="btn-danger px-3 py-1.5 text-sm"
+              onClick={() => review(a.id, 'confirmed')}
+            >
+              {t('admin.confirmFraud')}
+            </button>
+            <button
+              className="btn-danger px-3 py-1.5 text-sm"
+              onClick={() => review(a.id, 'confirmed', true)}
+            >
+              {t('admin.confirmSuspend')}
+            </button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function Privacy() {
+  const { t, locale } = useI18n();
+  const { data, error, load, setError } = useLoad<
+    Array<{
+      id: string;
+      kind: string;
+      status: string;
+      email: string;
+      name: string;
+      note: string | null;
+      createdAt: string;
+    }>
+  >('/api/admin/privacy-requests');
+  if (error && !data) return <ErrorText error={error} />;
+  if (!data) return <Spinner />;
+  return (
+    <Card className="overflow-x-auto p-0">
+      <table className="w-full text-sm">
+        <tbody>
+          {data.length === 0 && (
+            <tr>
+              <td className="px-4 py-3 text-ink-faint">{t('admin.noRequests')}</td>
+            </tr>
+          )}
+          {data.map((r) => (
+            <tr key={r.id} className="border-b border-slate-100">
+              <td className="px-4 py-2">{dateTime(r.createdAt, locale)}</td>
+              <td className="px-2 py-2">
+                {r.name} <span className="text-ink-faint">{r.email}</span>
+              </td>
+              <td className="px-2 py-2">{t(`privacy.kind.${r.kind}` as MessageKey)}</td>
+              <td className="px-2 py-2 text-ink-soft">{r.note}</td>
+              <td className="px-4 py-2 text-right">
+                {r.kind === 'erase' && r.status === 'pending' ? (
+                  <span className="flex justify-end gap-2">
+                    <button
+                      className="btn-danger px-2 py-1 text-xs"
+                      onClick={() => {
+                        const note = prompt(t('admin.why'));
+                        if (note !== null)
+                          post(`/api/admin/privacy-requests/${r.id}`, {
+                            decision: 'completed',
+                            note,
+                          })
+                            .then(load)
+                            .catch(setError);
+                      }}
+                    >
+                      {t('admin.erase')}
+                    </button>
+                    <button
+                      className="btn-secondary px-2 py-1 text-xs"
+                      onClick={() => {
+                        const note = prompt(t('admin.why'));
+                        if (note)
+                          post(`/api/admin/privacy-requests/${r.id}`, {
+                            decision: 'rejected',
+                            note,
+                          })
+                            .then(load)
+                            .catch(setError);
+                      }}
+                    >
+                      {t('admin.reject')}
+                    </button>
+                  </span>
+                ) : (
+                  <Badge>{r.status}</Badge>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
+function Analytics() {
+  const { t, locale } = useI18n();
+  const today = new Date().toISOString().slice(0, 10);
+  const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const [range, setRange] = useState({ from: monthAgo, to: today, country: '' });
+  const qs = `from=${range.from}&to=${range.to}${range.country ? `&country=${range.country}` : ''}`;
+  const { data, error } = useLoad<{
+    shipments: Record<string, number | null>;
+    money: Record<string, number | { count: number; amountMinor: number }>;
+    marketplace: Record<string, number | null>;
+    customs: Record<string, number | null>;
+    service: Record<string, number>;
+    byCorridor: Array<{ corridor: string; shipments: number; grossFreightValueMinor: number }>;
+    byServiceLevel: Array<{ serviceLevel: string; shipments: number; booked: number }>;
+  }>(`/api/admin/analytics?${qs}`);
+  const pct = (v: number | null | undefined) => (v == null ? '–' : `${Math.round(v * 100)} %`);
+  const eur = (v: unknown) => money(Number(v ?? 0), 'EUR', locale);
+  const tiles: Array<[MessageKey, string]> = data
+    ? [
+        ['an.requests', String(data.shipments.requests)],
+        ['an.booked', String(data.shipments.booked)],
+        ['an.successRate', pct(data.shipments.assignmentSuccessRate as number | null)],
+        [
+          'an.acceptance',
+          data.shipments.avgAcceptanceMinutes == null
+            ? '–'
+            : `${data.shipments.avgAcceptanceMinutes} min`,
+        ],
+        ['an.onTime', pct(data.shipments.onTimeDeliveryRate as number | null)],
+        ['an.gfv', eur(data.money.grossFreightValueMinor)],
+        ['an.revenue', eur(data.money.marketplaceRevenueMinor)],
+        ['an.customsRevenue', eur(data.money.customsServiceRevenueMinor)],
+        ['an.paymentCosts', eur(data.money.estimatedPaymentCostsMinor)],
+        ['an.margin', eur(data.money.contributionMarginMinor)],
+        ['an.avgPrice', eur(data.money.avgCustomerPriceMinor)],
+        ['an.avgPayout', eur(data.money.avgCarrierPayoutMinor)],
+        ['an.exposure', eur(data.money.customerDefaultExposureMinor)],
+        ['an.activation', pct(data.marketplace.carrierActivationRate)],
+        ['an.retention', pct(data.marketplace.shipperRetentionRate)],
+        [
+          'an.customsResponse',
+          data.customs.avgProviderResponseMinutes == null
+            ? '–'
+            : `${data.customs.avgProviderResponseMinutes} min`,
+        ],
+        ['an.borderDelays', String(data.customs.borderDelays)],
+        ['an.claims', String(data.service.claims)],
+        ['an.tickets', String(data.service.supportTickets)],
+      ]
+    : [];
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label={t('an.from')}>
+          <input
+            className="input"
+            type="date"
+            value={range.from}
+            onChange={(e) => setRange({ ...range, from: e.target.value })}
+          />
+        </Field>
+        <Field label={t('an.to')}>
+          <input
+            className="input"
+            type="date"
+            value={range.to}
+            onChange={(e) => setRange({ ...range, to: e.target.value })}
+          />
+        </Field>
+        <Field label={t('register.country')}>
+          <input
+            className="input w-24 uppercase"
+            maxLength={2}
+            value={range.country}
+            onChange={(e) => setRange({ ...range, country: e.target.value.toUpperCase() })}
+          />
+        </Field>
+        <a className="btn-secondary" href={`/api/admin/analytics?${qs}&format=csv`}>
+          CSV
+        </a>
+        <a className="btn-secondary" href={`/api/admin/analytics?${qs}&format=xlsx`}>
+          Excel
+        </a>
+      </div>
+      <ErrorText error={error} />
+      {!data && !error && <Spinner />}
+      {data && (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {tiles.map(([k, v]) => (
+              <Card key={k} className="py-3">
+                <div className="text-xs text-ink-soft">{t(k)}</div>
+                <div className="text-xl font-bold">{v}</div>
+              </Card>
+            ))}
+          </div>
+          <p className="text-xs text-ink-faint">{t('an.note')}</p>
+          <Card className="overflow-x-auto">
+            <div className="mb-2 font-semibold">{t('an.corridors')}</div>
+            <table className="w-full text-sm">
+              <tbody>
+                {data.byCorridor.map((c) => (
+                  <tr key={c.corridor} className="border-b border-slate-100">
+                    <td className="py-1.5">{c.corridor}</td>
+                    <td className="py-1.5 text-right">{c.shipments}</td>
+                    <td className="py-1.5 text-right">{eur(c.grossFreightValueMinor)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

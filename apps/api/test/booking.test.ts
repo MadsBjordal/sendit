@@ -406,9 +406,10 @@ describe('ledger', () => {
     );
     expect(Number(total.rows[0]!.s)).toBe(0);
     // The database refuses to change history
-    await expect(db.execute(sql`UPDATE ledger_entries SET amount_minor = 1`)).rejects.toThrow(
-      /append-only/,
-    );
+    const refused = await db
+      .execute(sql`UPDATE ledger_entries SET amount_minor = 1`)
+      .catch((e: { cause?: Error }) => e.cause);
+    expect(String((refused as Error | undefined)?.message)).toMatch(/append-only/);
   });
 });
 

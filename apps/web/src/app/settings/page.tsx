@@ -70,6 +70,29 @@ export default function Settings() {
           ))}
         </div>
       </Card>
+      <Card>
+        <div className="mb-1 font-semibold">{t('privacy.title')}</div>
+        <p className="mb-3 text-sm text-ink-soft">{t('privacy.text')}</p>
+        <div className="flex flex-wrap gap-2">
+          <a className="btn-secondary" href="/api/me/data-export">
+            {t('privacy.download')}
+          </a>
+          <button
+            className="btn-danger"
+            onClick={async () => {
+              if (!confirm(t('privacy.eraseConfirm'))) return;
+              try {
+                await api('/api/me/erasure-request', { method: 'POST', body: { note: null } });
+                alert(t('privacy.eraseRequested'));
+              } catch (e) {
+                setError(e);
+              }
+            }}
+          >
+            {t('privacy.erase')}
+          </button>
+        </div>
+      </Card>
       <ErrorText error={error} />
       {saved && <Alert tone="green" title={t('settings.saved')} />}
       <button className="btn-primary" onClick={save}>

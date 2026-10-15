@@ -5,6 +5,10 @@ import type { Ctx } from '../context';
 import { parse, staff } from '../lib/http';
 import * as admin from '../services/admin';
 import { reconciliation } from '../services/reconciliation';
+import { customerShipment } from '../services/shipments';
+import { organisations, shipments } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import { notFound } from '../lib/errors';
 
 export function adminRoutes(app: FastifyInstance, ctx: Ctx) {
   const tags = ['admin'];
@@ -114,6 +118,21 @@ export function adminRoutes(app: FastifyInstance, ctx: Ctx) {
     async (req) => {
       staff(req, 'finance.view');
       return reconciliation(ctx);
+    },
+  );
+  app.get(
+    '/api/admin/shipments/:id',
+    { schema: { tags, summary: 'One shipment as support sees it' } },
+    async (req) => {
+      staff(req, 'shipments.view');
+      const { id } = parse(z.object({ id: z.string().uuid() }), req.params);
+      const [s] = await ctx.db
+        .select({ orgId: shipments.orgId, org: organisations.name })
+        .from(shipments)
+        .innerJoin(organisations, eq(organisations.id, shipments.orgId))
+        .where(eq(shipments.id, id));
+      if (!s) throw notFound();
+      return { ...(await customerShipment(ctx, s.orgId, id)), org: s.org };
     },
   );
 }

@@ -10,7 +10,7 @@ import {
 import type { Ctx } from '../context';
 import type { DbOrTx } from '../db/client';
 import { organisations, vehicles, verificationDocuments } from '../db/schema';
-import { badRequest, conflict, notFound } from '../lib/errors';
+import { badRequest, conflict, notFound, pgError } from '../lib/errors';
 import { audit, type Actor } from './audit';
 
 export function pointWkt(lat: number, lng: number) {
@@ -85,7 +85,7 @@ export async function addVehicle(ctx: Ctx, actor: Actor & { orgId: string }, inp
     await audit(ctx.db, actor, 'fleet.vehicle_added', { type: 'vehicle', id: v!.id });
     return (await getVehicle(ctx.db, actor.orgId, v!.id))!;
   } catch (err) {
-    if ((err as { code?: string }).code === '23505')
+    if (pgError(err).code === '23505')
       throw conflict('vehicle_exists', 'This registration is already in your fleet');
     throw err;
   }

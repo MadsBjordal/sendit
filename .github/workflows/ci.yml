@@ -25,6 +25,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Known vulnerabilities in dependencies (high and critical fail the build)
+        run: pnpm audit --audit-level high --prod
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck

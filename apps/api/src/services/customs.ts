@@ -835,18 +835,16 @@ async function assign(
     await tx
       .delete(customsParties)
       .where(and(eq(customsParties.shipmentId, job.shipmentId), eq(customsParties.role, role)));
-    await tx
-      .insert(customsParties)
-      .values({
-        shipmentId: job.shipmentId,
-        role,
-        orgId: providerOrgId,
-        name: provider!.name,
-        email: null,
-        acknowledgedAt: now,
-        acknowledgedName: 'accepted on the platform',
-        assignedBy: providerOrgId,
-      });
+    await tx.insert(customsParties).values({
+      shipmentId: job.shipmentId,
+      role,
+      orgId: providerOrgId,
+      name: provider!.name,
+      email: null,
+      acknowledgedAt: now,
+      acknowledgedName: 'accepted on the platform',
+      assignedBy: providerOrgId,
+    });
   }
   await post(
     tx,
@@ -864,19 +862,17 @@ async function assign(
       { account: 'vat_payable', amountMinor: -price.vatMinor },
     ],
   );
-  await tx
-    .insert(carrierObligations)
-    .values({
-      kind: 'customs',
-      customsJobId: job.id,
-      carrierOrgId: providerOrgId,
-      amountMinor: fee,
-      currency: job.currency,
-      status: 'committed',
-      funded: true,
-      conditions:
-        'Paid by the platform when the customs work is completed (all its procedures released or completed).',
-    });
+  await tx.insert(carrierObligations).values({
+    kind: 'customs',
+    customsJobId: job.id,
+    carrierOrgId: providerOrgId,
+    amountMinor: fee,
+    currency: job.currency,
+    status: 'committed',
+    funded: true,
+    conditions:
+      'Paid by the platform when the customs work is completed (all its procedures released or completed).',
+  });
   await enqueue(
     tx,
     'refund_customs_excess',
