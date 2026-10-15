@@ -580,4 +580,20 @@ export const it: Messages = {
   'error.driver_not_eligible': 'Questo autista non può accettare questo incarico',
   'error.driver_exists': 'Esiste già un autista con questa e-mail',
   'error.not_delivered': 'Si può confermare solo una spedizione consegnata',
+  // --- milestone 4
+  'nav.invoices': 'Fatture',
+  'invoices.subtitle':
+    'Fatture per i trasporti da Lei prenotati ed estratti dei pagamenti ricevuti.',
+  'invoices.empty': 'Ancora nessuna fattura',
+  'invoices.kind.customer_invoice': 'Fattura',
+  'invoices.kind.carrier_statement': 'Estratto dei pagamenti',
+  'invoices.kind.credit_note': 'Nota di credito',
+  'invoices.kind.customs_invoice': 'Fattura (servizi doganali)',
+  'invoices.kind.customs_statement': 'Estratto dei pagamenti (servizi doganali)',
+  'admin.reconciled': 'Libro mastro e registrazioni concordano',
+  'admin.notReconciled': 'Differenze rilevate: verificare prima di pagare',
+  'admin.checks': 'Controlli (libro mastro / atteso)',
+  'ledger.chargeback_receivable': 'Chargeback da recuperare dai clienti',
+  'ledger.customs_provider_payable': 'Debiti verso gli spedizionieri doganali',
+  'ledger.customs_revenue': 'Commissioni per servizi doganali (maturate)',
 };

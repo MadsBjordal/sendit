@@ -166,6 +166,12 @@ registerJob('carrier_payout', async (ctx, payload) => {
         .update(carrierObligations)
         .set({ status: 'paid', paidAt: ctx.now() })
         .where(eq(carrierObligations.id, o.id));
+    await enqueue(
+      tx,
+      'issue_carrier_statement',
+      { obligationId: o.id },
+      { dedupeKey: `statement:${o.id}` },
+    );
     await notifyOrg(tx, o.carrierOrgId, 'finance.view', {
       kind: 'payout.sent',
       data: { amountMinor: o.amountMinor },

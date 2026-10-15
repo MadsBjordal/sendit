@@ -576,4 +576,20 @@ export const pl: Messages = {
   'error.driver_not_eligible': 'Ten kierowca nie może przyjąć tego zlecenia',
   'error.driver_exists': 'Kierowca z tym adresem e-mail już istnieje',
   'error.not_delivered': 'Można potwierdzić tylko dostarczoną przesyłkę',
+  // --- milestone 4
+  'nav.invoices': 'Faktury',
+  'invoices.subtitle':
+    'Faktury za zamówione przez Ciebie transporty i zestawienia otrzymanych wypłat.',
+  'invoices.empty': 'Brak faktur',
+  'invoices.kind.customer_invoice': 'Faktura',
+  'invoices.kind.carrier_statement': 'Zestawienie płatności',
+  'invoices.kind.credit_note': 'Faktura korygująca',
+  'invoices.kind.customs_invoice': 'Faktura (usługi celne)',
+  'invoices.kind.customs_statement': 'Zestawienie płatności (usługi celne)',
+  'admin.reconciled': 'Księga i ewidencja są zgodne',
+  'admin.notReconciled': 'Wykryto rozbieżności: sprawdź przed wypłatą',
+  'admin.checks': 'Kontrole (księga / oczekiwane)',
+  'ledger.chargeback_receivable': 'Obciążenia zwrotne do odzyskania od klientów',
+  'ledger.customs_provider_payable': 'Zobowiązania wobec agencji celnych',
+  'ledger.customs_revenue': 'Opłaty za usługi celne (zarobione)',
 };

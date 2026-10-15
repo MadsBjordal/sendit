@@ -360,8 +360,18 @@ function Countries() {
 
 function Finance() {
   const { t, locale } = useI18n();
-  const { data, error } =
-    useLoad<Array<{ code: string; currency: string; total: number }>>('/api/admin/ledger');
+  const { data, error } = useLoad<{
+    allOk: boolean;
+    checks: Array<{
+      check: string;
+      ledger: number;
+      expected: number;
+      difference: number;
+      ok: boolean;
+    }>;
+    problems: Record<string, string[]>;
+    balances: Array<{ code: string; currency: string; total: number }>;
+  }>('/api/admin/reconciliation');
   if (error)
     return error instanceof ApiError && error.status === 403 ? (
       <Alert tone="gray" title={t('error.forbidden')} />
@@ -370,23 +380,55 @@ function Finance() {
     );
   if (!data) return <Spinner />;
   return (
-    <Card>
-      <div className="mb-1 font-semibold">{t('admin.ledger')}</div>
-      <p className="mb-3 text-sm text-ink-soft">{t('admin.ledgerText')}</p>
-      <table className="w-full text-sm">
-        <tbody>
-          {data.map((r) => (
-            <tr key={`${r.code}${r.currency}`} className="border-b border-slate-100">
-              <td className="py-2">{t(`ledger.${r.code}` as MessageKey)}</td>
-              <td className="py-2 text-right font-mono">{money(r.total, r.currency, locale)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="mt-3">
-        <Badge tone="amber">{t('admin.testMoney')}</Badge>
-      </div>
-    </Card>
+    <div className="space-y-4">
+      <Alert
+        tone={data.allOk ? 'green' : 'red'}
+        title={data.allOk ? t('admin.reconciled') : t('admin.notReconciled')}
+      />
+      <Card className="overflow-x-auto">
+        <div className="mb-2 font-semibold">{t('admin.checks')}</div>
+        <table className="w-full text-sm">
+          <tbody>
+            {data.checks.map((c) => (
+              <tr key={c.check} className="border-b border-slate-100">
+                <td className="py-2 pr-2">
+                  {c.ok ? '✓' : '✗'} {c.check}
+                </td>
+                <td className="py-2 text-right font-mono">{money(c.ledger, 'EUR', locale)}</td>
+                <td className="py-2 text-right font-mono text-ink-soft">
+                  {money(c.expected, 'EUR', locale)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {Object.entries(data.problems).map(
+          ([k, v]) =>
+            v.length > 0 && (
+              <p key={k} className="mt-2 text-sm text-red-700">
+                {k}: {v.join(', ')}
+              </p>
+            ),
+        )}
+      </Card>
+      <Card>
+        <div className="mb-1 font-semibold">{t('admin.ledger')}</div>
+        <p className="mb-3 text-sm text-ink-soft">{t('admin.ledgerText')}</p>
+        <table className="w-full text-sm">
+          <tbody>
+            {data.balances.map((r) => (
+              <tr key={`${r.code}${r.currency}`} className="border-b border-slate-100">
+                <td className="py-2">{t(`ledger.${r.code}` as MessageKey)}</td>
+                <td className="py-2 text-right font-mono">{money(r.total, r.currency, locale)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-3">
+          <Badge tone="amber">{t('admin.testMoney')}</Badge>
+        </div>
+      </Card>
+    </div>
   );
 }
 

@@ -420,7 +420,7 @@ registerJob('generate_pod', async (ctx, payload) => {
     });
     y -= opts.gap ?? 15;
   };
-  line(ctx.config.brand.name, { size: 12, font: bold });
+  line(ctx.config.brand.name, { size: 12, font: bold, gap: 26 });
   line(`Proof of delivery  ${shipmentNumber(s.number)}`, { size: 18, font: bold, gap: 26 });
   line(`Shipper: ${shipper!.name}${s.reference ? `   Reference: ${s.reference}` : ''}`);
   line(`Carrier: ${carrier!.name}`, { gap: 22 });

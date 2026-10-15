@@ -176,6 +176,49 @@ export const verificationDocuments = pgTable(
   (t) => [index('verification_documents_org_idx').on(t.orgId)],
 );
 
+/**
+ * Invoices and statements, numbered without gaps per series and year. Issued once, never edited:
+ * a correction is a credit note.
+ */
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: id(),
+    number: text('number').notNull().unique(),
+    kind: text('kind').notNull(), // customer_invoice | carrier_statement | credit_note | customs_invoice | customs_statement
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organisations.id),
+    shipmentId: uuid('shipment_id').references(() => shipments.id),
+    refType: text('ref_type').notNull(),
+    refId: uuid('ref_id').notNull(),
+    currency: text('currency').notNull(),
+    netMinor: minor('net_minor').notNull(),
+    vatMinor: minor('vat_minor').notNull(),
+    totalMinor: minor('total_minor').notNull(),
+    vatBp: integer('vat_bp').notNull(),
+    taxNote: text('tax_note').notNull(),
+    lines: jsonb('lines').notNull(),
+    fileId: uuid('file_id'),
+    issuedAt: ts('issued_at').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('invoices_ref_key').on(t.kind, t.refType, t.refId),
+    index('invoices_org_idx').on(t.orgId, t.issuedAt),
+  ],
+);
+
+export const invoiceSequences = pgTable(
+  'invoice_sequences',
+  {
+    series: text('series').notNull(),
+    year: integer('year').notNull(),
+    last: integer('last').notNull().default(0),
+  },
+  (t) => [uniqueIndex('invoice_sequences_key').on(t.series, t.year)],
+);
+
 // ---------------------------------------------------------------- platform configuration
 
 export const countryConfiguration = pgTable('country_configuration', {

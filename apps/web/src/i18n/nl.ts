@@ -579,4 +579,20 @@ export const nl: Messages = {
   'error.driver_not_eligible': 'Deze chauffeur kan deze rit niet uitvoeren',
   'error.driver_exists': 'Er bestaat al een chauffeur met dit e-mailadres',
   'error.not_delivered': 'Alleen een afgeleverde zending kan worden bevestigd',
+  // --- milestone 4
+  'nav.invoices': 'Facturen',
+  'invoices.subtitle':
+    'Facturen voor transport dat u hebt geboekt en overzichten van ontvangen uitbetalingen.',
+  'invoices.empty': 'Nog geen facturen',
+  'invoices.kind.customer_invoice': 'Factuur',
+  'invoices.kind.carrier_statement': 'Betalingsoverzicht',
+  'invoices.kind.credit_note': 'Creditnota',
+  'invoices.kind.customs_invoice': 'Factuur (douanediensten)',
+  'invoices.kind.customs_statement': 'Betalingsoverzicht (douanediensten)',
+  'admin.reconciled': 'Grootboek en administratie komen overeen',
+  'admin.notReconciled': 'Verschillen gevonden: controleren vóór uitbetaling',
+  'admin.checks': 'Controles (grootboek / verwacht)',
+  'ledger.chargeback_receivable': 'Terug te vorderen chargebacks van klanten',
+  'ledger.customs_provider_payable': 'Verschuldigd aan douanedienstverleners',
+  'ledger.customs_revenue': 'Vergoedingen voor douanediensten (verdiend)',
 };

@@ -1,4 +1,5 @@
 import cookie from '@fastify/cookie';
+import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -19,6 +20,7 @@ import './services/payments';
 import './services/trips';
 import './services/payouts';
 import './services/notifications';
+import './services/invoices';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -48,6 +50,14 @@ export async function buildApp(
   app.setValidatorCompiler(() => () => true);
 
   await app.register(cookie);
+  // Other origins (e.g. the driver app's web build) may call the API with a bearer token only:
+  // no cookies are accepted cross-origin, so the session cookie can never be used from another site.
+  if (ctx.config.corsOrigins.length)
+    await app.register(cors, {
+      origin: ctx.config.corsOrigins,
+      credentials: false,
+      allowedHeaders: ['authorization', 'content-type', 'x-requested-with'],
+    });
   // Off only in automated tests, where every request comes from one address (one test turns it on)
   if (opts.rateLimit ?? ctx.config.env !== 'test')
     await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });

@@ -11,6 +11,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
   shipper: [
     { href: '/book', key: 'nav.book' },
     { href: '/shipments', key: 'nav.shipments' },
+    { href: '/invoices', key: 'nav.invoices' },
     { href: '/team', key: 'nav.team' },
     { href: '/settings', key: 'nav.settings' },
   ],
@@ -20,6 +21,7 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/carrier/fleet', key: 'nav.fleet' },
     { href: '/carrier/drivers', key: 'nav.drivers' },
     { href: '/carrier/earnings', key: 'nav.earnings' },
+    { href: '/invoices', key: 'nav.invoices' },
     { href: '/carrier/verification', key: 'nav.verification' },
     { href: '/team', key: 'nav.team' },
     { href: '/settings', key: 'nav.settings' },

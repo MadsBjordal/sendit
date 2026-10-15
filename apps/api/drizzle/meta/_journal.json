@@ -43,6 +43,13 @@
       "when": 1792093548367,
       "tag": "0005_operations_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792094393241,
+      "tag": "0006_invoices",
+      "breakpoints": true
     }
   ]
 }

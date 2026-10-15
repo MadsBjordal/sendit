@@ -580,4 +580,20 @@ export const es: Messages = {
   'error.driver_not_eligible': 'Este conductor no puede realizar este servicio',
   'error.driver_exists': 'Ya existe un conductor con este correo electrónico',
   'error.not_delivered': 'Solo se puede confirmar un envío entregado',
+  // --- milestone 4
+  'nav.invoices': 'Facturas',
+  'invoices.subtitle':
+    'Facturas de los transportes que ha reservado y extractos de los pagos que ha recibido.',
+  'invoices.empty': 'Aún no hay facturas',
+  'invoices.kind.customer_invoice': 'Factura',
+  'invoices.kind.carrier_statement': 'Extracto de pago',
+  'invoices.kind.credit_note': 'Factura rectificativa',
+  'invoices.kind.customs_invoice': 'Factura (servicios aduaneros)',
+  'invoices.kind.customs_statement': 'Extracto de pago (servicios aduaneros)',
+  'admin.reconciled': 'El libro mayor y los registros coinciden',
+  'admin.notReconciled': 'Se han encontrado diferencias: revisar antes de pagar',
+  'admin.checks': 'Comprobaciones (libro mayor / esperado)',
+  'ledger.chargeback_receivable': 'Contracargos a recuperar de clientes',
+  'ledger.customs_provider_payable': 'Adeudado a proveedores aduaneros',
+  'ledger.customs_revenue': 'Comisiones por servicios aduaneros (devengadas)',
 };

@@ -18,7 +18,9 @@
       "package": "com.projectfreight.driver",
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "CAMERA"]
     },
-    "web": { "bundler": "metro" },
+    "web": {
+      "bundler": "metro"
+    },
     "plugins": [
       "expo-secure-store",
       [
@@ -26,8 +28,11 @@
         {
           "locationWhenInUsePermission": "Your position is shared with the shipper only while you have an active job."
         }
-      ]
+      ],
+      "expo-asset"
     ],
-    "extra": { "apiUrl": "http://localhost:4000" }
+    "extra": {
+      "apiUrl": "http://localhost:4000"
+    }
   }
 }

@@ -13,6 +13,9 @@ export interface Config {
   emailFrom: string;
   routingProvider: 'estimate';
   fileStorageDir: string;
+  corsOrigins: string[];
+  /** The platform's legal entity on invoices (until set, invoices are marked DRAFT) */
+  legalEntity: { name: string; address: string; vatNumber: string | null; complete: boolean };
   /** Hours the customer has to confirm or dispute a delivery before it is accepted automatically */
   deliveryAcceptHours: number;
   /** Days tracking positions are kept */
@@ -48,6 +51,17 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     emailFrom: env.EMAIL_FROM ?? `${env.BRAND_NAME || 'Project Freight'} <no-reply@example.com>`,
     routingProvider: 'estimate',
     fileStorageDir: env.FILE_STORAGE_DIR ?? './data/files',
+    legalEntity: {
+      name:
+        env.LEGAL_ENTITY_NAME || `${env.BRAND_NAME || 'Project Freight'} (legal entity not set)`,
+      address: env.LEGAL_ENTITY_ADDRESS || '',
+      vatNumber: env.LEGAL_ENTITY_VAT || null,
+      complete: !!(env.LEGAL_ENTITY_NAME && env.LEGAL_ENTITY_ADDRESS && env.LEGAL_ENTITY_VAT),
+    },
+    corsOrigins: (env.CORS_ORIGINS ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
     deliveryAcceptHours: Number(env.DELIVERY_ACCEPT_HOURS ?? 48),
     trackingRetentionDays: Number(env.TRACKING_RETENTION_DAYS ?? 90),
     runWorker: env.RUN_WORKER !== 'false',

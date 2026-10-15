@@ -592,4 +592,20 @@ export const fr: Messages = {
   'error.driver_not_eligible': 'Ce conducteur ne peut pas prendre cette mission',
   'error.driver_exists': 'Un conducteur avec cet e-mail existe déjà',
   'error.not_delivered': 'Seul un envoi livré peut être confirmé',
+  // --- milestone 4
+  'nav.invoices': 'Factures',
+  'invoices.subtitle':
+    'Factures des transports que vous avez réservés et relevés des versements que vous avez reçus.',
+  'invoices.empty': 'Aucune facture pour l’instant',
+  'invoices.kind.customer_invoice': 'Facture',
+  'invoices.kind.carrier_statement': 'Relevé de paiement',
+  'invoices.kind.credit_note': 'Avoir',
+  'invoices.kind.customs_invoice': 'Facture (services douaniers)',
+  'invoices.kind.customs_statement': 'Relevé de paiement (services douaniers)',
+  'admin.reconciled': 'Le grand livre et les registres concordent',
+  'admin.notReconciled': 'Écarts constatés : à vérifier avant tout versement',
+  'admin.checks': 'Contrôles (grand livre / attendu)',
+  'ledger.chargeback_receivable': 'Rétrofacturations à recouvrer auprès des clients',
+  'ledger.customs_provider_payable': 'Dû aux prestataires douaniers',
+  'ledger.customs_revenue': 'Frais de services douaniers (acquis)',
 };

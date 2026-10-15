@@ -440,6 +440,12 @@ async function finaliseBooking(
     funded: true,
     conditions: GUARANTEE_TERMS,
   });
+  await enqueue(
+    tx,
+    'issue_customer_invoice',
+    { bookingId: booking!.id },
+    { dedupeKey: `invoice:${booking!.id}` },
+  );
   if (s.fundedMinor > a.price.totalMinor)
     await enqueue(
       tx,

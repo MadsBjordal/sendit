@@ -14,6 +14,7 @@ import {
 } from '../services/drivers';
 import { FILE_KINDS, readFileFor, saveFile } from '../services/files';
 import { listMessages, sendMessage } from '../services/messages';
+import { listInvoices } from '../services/invoices';
 import {
   carrierEarnings,
   payoutAccountSchema,
@@ -107,6 +108,17 @@ export function operationsRoutes(app: FastifyInstance, ctx: Ctx) {
       await setPayoutAccount(ctx, a, parse(payoutAccountSchema, req.body));
       await retryFailedPayouts(ctx, a.orgId);
       return { ok: true };
+    },
+  );
+
+  app.get(
+    '/api/org/invoices',
+    {
+      schema: { tags: ['organisation'], summary: 'Invoices and payment statements of my company' },
+    },
+    async (req) => {
+      const a = member(req, { permission: 'finance.view' });
+      return listInvoices(ctx, a.orgId);
     },
   );
 

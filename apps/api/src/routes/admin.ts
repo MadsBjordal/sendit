@@ -4,6 +4,7 @@ import type { PricingConfig } from '@freight/shared';
 import type { Ctx } from '../context';
 import { parse, staff } from '../lib/http';
 import * as admin from '../services/admin';
+import { reconciliation } from '../services/reconciliation';
 
 export function adminRoutes(app: FastifyInstance, ctx: Ctx) {
   const tags = ['admin'];
@@ -107,4 +108,12 @@ export function adminRoutes(app: FastifyInstance, ctx: Ctx) {
     staff(req, 'jobs.view');
     return admin.problemJobs(ctx);
   });
+  app.get(
+    '/api/admin/reconciliation',
+    { schema: { tags, summary: 'Ledger against payments, refunds, payouts and obligations' } },
+    async (req) => {
+      staff(req, 'finance.view');
+      return reconciliation(ctx);
+    },
+  );
 }

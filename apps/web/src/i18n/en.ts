@@ -566,6 +566,21 @@ export const en = {
   'error.driver_not_eligible': 'This driver cannot take this job',
   'error.driver_exists': 'A driver with this email already exists',
   'error.not_delivered': 'Only a delivered shipment can be confirmed',
+  // --- milestone 4
+  'nav.invoices': 'Invoices',
+  'invoices.subtitle': 'Invoices for transport you booked and statements for payouts you received.',
+  'invoices.empty': 'No invoices yet',
+  'invoices.kind.customer_invoice': 'Invoice',
+  'invoices.kind.carrier_statement': 'Payment statement',
+  'invoices.kind.credit_note': 'Credit note',
+  'invoices.kind.customs_invoice': 'Invoice (customs services)',
+  'invoices.kind.customs_statement': 'Payment statement (customs services)',
+  'admin.reconciled': 'Ledger and records agree',
+  'admin.notReconciled': 'Differences found: check before paying out',
+  'admin.checks': 'Checks (ledger / expected)',
+  'ledger.chargeback_receivable': 'Chargebacks to recover from customers',
+  'ledger.customs_provider_payable': 'Owed to customs providers',
+  'ledger.customs_revenue': 'Customs service fees (earned)',
 };
 
 export type MessageKey = keyof typeof en;

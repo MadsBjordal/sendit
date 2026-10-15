@@ -582,4 +582,20 @@ export const de: Messages = {
   'error.driver_not_eligible': 'Dieser Fahrer kann diesen Auftrag nicht übernehmen',
   'error.driver_exists': 'Ein Fahrer mit dieser E-Mail-Adresse existiert bereits',
   'error.not_delivered': 'Nur eine zugestellte Sendung kann bestätigt werden',
+  // --- milestone 4
+  'nav.invoices': 'Rechnungen',
+  'invoices.subtitle':
+    'Rechnungen für von Ihnen gebuchte Transporte und Abrechnungen für erhaltene Auszahlungen.',
+  'invoices.empty': 'Noch keine Rechnungen',
+  'invoices.kind.customer_invoice': 'Rechnung',
+  'invoices.kind.carrier_statement': 'Zahlungsabrechnung',
+  'invoices.kind.credit_note': 'Gutschrift',
+  'invoices.kind.customs_invoice': 'Rechnung (Zolldienstleistungen)',
+  'invoices.kind.customs_statement': 'Zahlungsabrechnung (Zolldienstleistungen)',
+  'admin.reconciled': 'Hauptbuch und Aufzeichnungen stimmen überein',
+  'admin.notReconciled': 'Abweichungen gefunden: vor der Auszahlung prüfen',
+  'admin.checks': 'Prüfungen (Hauptbuch / erwartet)',
+  'ledger.chargeback_receivable': 'Von Kunden zurückzufordernde Rückbuchungen',
+  'ledger.customs_provider_payable': 'Verbindlichkeiten gegenüber Zolldienstleistern',
+  'ledger.customs_revenue': 'Gebühren für Zolldienstleistungen (verdient)',
 };
