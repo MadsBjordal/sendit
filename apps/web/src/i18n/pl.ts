@@ -845,7 +845,7 @@ export const pl: Messages = {
   'perf.standing.good': 'Dobra',
   'perf.standing.fair': 'Średnia',
   'perf.standing.at_risk': 'Zagrożona',
-  'perf.counts': '{jobs} zleceń, {delivered} dostarczonych',
+  'perf.counts': 'Zlecenia: {jobs} · dostarczone: {delivered}',
   'perf.onTimeDelivery': 'Dostawa na czas',
   'perf.onTimeDeliveryHint': 'Dostarczone w oknie dostawy.',
   'perf.onTimePickup': 'Odbiór na czas',

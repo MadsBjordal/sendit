@@ -32,10 +32,15 @@ until each gate is closed by qualified advisers.
   vehicles are refused domestic jobs; documents must be approved by staff and valid through the job.
 - **Sanctioned countries** (Russia, Belarus) cannot be activated.
 - **Customs duties and import VAT** are not part of our prices and never become platform revenue.
-- **Driver location privacy** (phase 3): location only during an active job, customer sees progress,
-  not the driver's identity or history.
+- **Driver location privacy**: location only during an active job and only while the app is open,
+  customer sees progress, not the driver's identity or history; positions deleted after 90 days.
+- **Data subject requests**: people export their data and ask for erasure; erasure keeps financial
+  records the law requires (D-028).
+- **Invoices say DRAFT** until the legal entity's name, address and VAT number are set.
 
 ## Personal data held today
 
 Users (name, email, password hash, language), company data, shipment contacts (name, phone),
-IP address and user agent in sessions and audit logs. Retention periods are still to be set (gate 10).
+IP address and user agent in sessions and audit logs, driver names/phones/licences, delivery
+photos and signatures, positions during trips, bank details (IBAN, shown masked), support messages.
+Retention periods are placeholders (gate 10, D-028).

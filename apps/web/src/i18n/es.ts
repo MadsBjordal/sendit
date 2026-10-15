@@ -852,7 +852,7 @@ export const es: Messages = {
   'perf.standing.good': 'Buena',
   'perf.standing.fair': 'Regular',
   'perf.standing.at_risk': 'En riesgo',
-  'perf.counts': '{jobs} servicios, {delivered} entregados',
+  'perf.counts': 'Servicios: {jobs} · entregados: {delivered}',
   'perf.onTimeDelivery': 'Entrega puntual',
   'perf.onTimeDeliveryHint': 'Entregado dentro de la ventana de entrega.',
   'perf.onTimePickup': 'Recogida puntual',

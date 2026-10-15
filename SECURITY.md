@@ -16,17 +16,22 @@
 | Money integrity    | Integer cents; ledger transactions must balance (database trigger); ledger, events and audit logs are append-only (database triggers); idempotency keys for acceptances, ledger postings and refunds |
 | Headers            | nosniff, DENY framing, strict referrer policy, permissions policy                                                                                                                                    |
 | Secrets            | Only in `.env` (ignored by git); `.env.example` lists them; production refuses weak/default webhook secret and the test payment provider                                                             |
-| Audit              | Logins, failures, registrations, verification decisions, bookings, offer decisions, country and pricing changes                                                                                      |
+| Audit              | Logins, failures, registrations, verification decisions, bookings, offer decisions, country and pricing changes, bank-detail changes (masked IBAN), dispute, fraud and privacy decisions             |
+| Files              | Private; served only after the same access check as the shipment (other companies get 404); uploads checked by their real content (image/PDF), size-limited, hashed                                  |
+| Payout fraud       | Payouts held 48 h after bank details change until an admin clears the alert; shared IBANs flagged                                                                                                    |
+| Mobile             | Bearer token for the driver app; CORS only for listed origins and never with cookies                                                                                                                 |
+| Headers / CSP      | CSP and HSTS in production builds (inline scripts still allowed, D-027)                                                                                                                              |
+| Dependencies       | `pnpm audit` in CI (high and above fails), Dependabot weekly                                                                                                                                         |
 
 ## To do before production
 
-- Content Security Policy for the web app; HSTS at the edge.
-- Private object storage with short-lived signed URLs for documents and photos (+ access tests).
+- CSP with nonces instead of `'unsafe-inline'` (D-027).
+- Cloud object storage with short-lived signed URLs (access checks are tested already, on the local folder).
 - Secret manager (Key Vault / Secrets Manager) and key rotation runbook.
-- Dependency scanning (Dependabot/Renovate + `pnpm audit` in CI) and container image scanning.
+- Container image scanning.
 - Shared rate-limit store (Redis) once there is more than one API instance.
 - Backups with tested restores (point-in-time recovery on the managed database).
-- Data retention jobs and data subject request workflow (export/delete with legal holds).
+- Final retention periods (the job exists, periods are placeholders: D-028).
 - External penetration test before launch.
 
 ## Reporting

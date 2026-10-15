@@ -850,7 +850,7 @@ export const it: Messages = {
   'perf.standing.good': 'Buona',
   'perf.standing.fair': 'Discreta',
   'perf.standing.at_risk': 'A rischio',
-  'perf.counts': '{jobs} incarichi, {delivered} consegnati',
+  'perf.counts': 'Incarichi: {jobs} · consegnati: {delivered}',
   'perf.onTimeDelivery': 'Consegna puntuale',
   'perf.onTimeDeliveryHint': 'Consegnato nella finestra di consegna.',
   'perf.onTimePickup': 'Ritiro puntuale',

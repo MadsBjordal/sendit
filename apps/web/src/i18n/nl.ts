@@ -848,7 +848,7 @@ export const nl: Messages = {
   'perf.standing.good': 'Goed',
   'perf.standing.fair': 'Matig',
   'perf.standing.at_risk': 'Risico',
-  'perf.counts': '{jobs} ritten, {delivered} geleverd',
+  'perf.counts': 'Ritten: {jobs} · geleverd: {delivered}',
   'perf.onTimeDelivery': 'Op tijd geleverd',
   'perf.onTimeDeliveryHint': 'Geleverd binnen het leveringsvenster.',
   'perf.onTimePickup': 'Op tijd opgehaald',

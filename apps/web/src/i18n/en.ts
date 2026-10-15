@@ -833,7 +833,7 @@ export const en = {
   'perf.standing.good': 'Good',
   'perf.standing.fair': 'Fair',
   'perf.standing.at_risk': 'At risk',
-  'perf.counts': '{jobs} jobs, {delivered} delivered',
+  'perf.counts': 'Jobs: {jobs} · delivered: {delivered}',
   'perf.onTimeDelivery': 'On-time delivery',
   'perf.onTimeDeliveryHint': 'Delivered within the delivery window.',
   'perf.onTimePickup': 'On-time pickup',

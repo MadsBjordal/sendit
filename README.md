@@ -16,6 +16,7 @@ colours in `apps/web/src/app/globals.css`) to rebrand.
 | `packages/shared` | Business rules used everywhere: money, pricing, vehicle fit, customs detection, input checks |
 | `apps/api`        | The server (Fastify + PostgreSQL/PostGIS): accounts, shipments, booking, payments, admin     |
 | `apps/web`        | The website (Next.js): customer booking, carrier load board, administration; 7 languages     |
+| `apps/driver`     | The driver app (Expo / React Native): jobs, pickup and delivery steps, photos, signature     |
 
 Documents: `ARCHITECTURE.md`, `PRODUCT_REQUIREMENTS.md`, `DATABASE.md`, `SECURITY.md`,
 `COMPLIANCE.md`, `ROADMAP.md`, `DECISIONS.md`, `IMPLEMENTATION_STATUS.md`.
@@ -52,6 +53,28 @@ API documentation (OpenAPI): http://localhost:4000/api/docs
 6. As the carrier open **Find loads**: the shipment is there with its payout. **Accept** it, and
    the shipper's page shows **Carrier booked** and the refund of the unused prepayment.
 7. Try **Ask for a different payout** with a higher amount: the shipper sees an offer to approve.
+8. As the carrier, **Drivers** → add a driver; **Jobs** → **Assign a driver**, **Progress** and
+   **Loads back** (return loads near the delivery). **Performance** shows the carrier's record.
+9. Do the trip steps (in the driver app, below, or as the carrier), then as the shipper confirm the
+   delivery. The carrier's **Earnings** shows the (simulated) payout once bank details are added.
+10. Admin → **Finance** shows the reconciliation; **Disputes**, **Fraud**, **Support**, **Analytics**
+    and **Privacy** are the other tabs.
+
+## The driver app
+
+It is not part of `pnpm install` (it has its own packages):
+
+```bash
+cd apps/driver
+npm install
+npm run web          # in the browser, for trying it
+npm run android      # on an Android phone with the Expo Go app (same Wi-Fi as the computer)
+```
+
+The app talks to `http://localhost:4000` unless you start it with another address, e.g.
+`set EXPO_PUBLIC_API_URL=http://192.168.1.20:4000` (Windows) before `npm run android`. For the
+browser version add its address (`http://localhost:8081`) to `CORS_ORIGINS` in `.env`. Log in as a
+driver who accepted the invitation sent from **Drivers**. It has not been tried on a real phone yet.
 
 ## Checks
 
