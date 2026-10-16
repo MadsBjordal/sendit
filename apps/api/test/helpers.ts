@@ -12,7 +12,7 @@ import { makeContext } from '../src/services/index';
 import { runDueJobs } from '../src/services/jobs';
 
 const TEST_DB =
-  process.env.TEST_DATABASE_URL ?? 'postgres://freight:freight@localhost:5432/freight_test';
+  process.env.TEST_DATABASE_URL ?? 'postgres://freight:freight@localhost:5434/freight_test';
 
 export interface TestEnv {
   ctx: Ctx & { close(): Promise<void> };
