@@ -866,6 +866,8 @@ export const nl: Messages = {
   'settings.repeatPassword': 'Nieuw wachtwoord herhalen',
   'settings.passwordMismatch': 'De twee nieuwe wachtwoorden zijn niet gelijk',
   'settings.changePassword': 'Wachtwoord wijzigen',
+  'settings.mfaCode': 'Code uit je authenticator-app',
+  'error.mfa_required': 'Vul de 6-cijferige code uit je authenticator-app in',
   'settings.passwordChangedHere': 'Je wachtwoord is gewijzigd',
   'error.wrong_password': 'Je huidige wachtwoord klopt niet',
   'error.same_password': 'Kies een ander wachtwoord dan het huidige',

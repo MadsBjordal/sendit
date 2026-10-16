@@ -870,6 +870,8 @@ export const es: Messages = {
   'settings.repeatPassword': 'Repite la nueva contraseña',
   'settings.passwordMismatch': 'Las dos contraseñas nuevas no coinciden',
   'settings.changePassword': 'Cambiar contraseña',
+  'settings.mfaCode': 'Código de tu app de autenticación',
+  'error.mfa_required': 'Introduce el código de 6 dígitos de tu app de autenticación',
   'settings.passwordChangedHere': 'Tu contraseña se ha cambiado',
   'error.wrong_password': 'Tu contraseña actual no es correcta',
   'error.same_password': 'Elige una contraseña distinta de la actual',

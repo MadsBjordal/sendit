@@ -863,6 +863,8 @@ export const pl: Messages = {
   'settings.repeatPassword': 'Powtórz nowe hasło',
   'settings.passwordMismatch': 'Nowe hasła nie są takie same',
   'settings.changePassword': 'Zmień hasło',
+  'settings.mfaCode': 'Kod z aplikacji uwierzytelniającej',
+  'error.mfa_required': 'Wpisz 6-cyfrowy kod z aplikacji uwierzytelniającej',
   'settings.passwordChangedHere': 'Hasło zostało zmienione',
   'error.wrong_password': 'Obecne hasło jest nieprawidłowe',
   'error.same_password': 'Wybierz hasło inne niż obecne',

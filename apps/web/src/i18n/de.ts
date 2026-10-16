@@ -872,6 +872,8 @@ export const de: Messages = {
   'settings.repeatPassword': 'Neues Passwort wiederholen',
   'settings.passwordMismatch': 'Die beiden neuen Passwörter stimmen nicht überein',
   'settings.changePassword': 'Passwort ändern',
+  'settings.mfaCode': 'Code aus Ihrer Authenticator-App',
+  'error.mfa_required': 'Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein',
   'settings.passwordChangedHere': 'Ihr Passwort wurde geändert',
   'error.wrong_password': 'Ihr aktuelles Passwort ist falsch',
   'error.same_password': 'Wählen Sie ein anderes Passwort als das aktuelle',

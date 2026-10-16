@@ -851,6 +851,8 @@ export const en = {
   'settings.repeatPassword': 'New password again',
   'settings.passwordMismatch': 'The two new passwords are not the same',
   'settings.changePassword': 'Change password',
+  'settings.mfaCode': 'Code from your authenticator app',
+  'error.mfa_required': 'Enter the 6-digit code from your authenticator app',
   'settings.passwordChangedHere': 'Your password has been changed',
   'error.wrong_password': 'Your current password is wrong',
   'error.same_password': 'Choose a password different from the current one',

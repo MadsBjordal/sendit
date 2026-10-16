@@ -70,7 +70,7 @@ export default function Settings() {
           ))}
         </div>
       </Card>
-      <PasswordCard />
+      <PasswordCard needsCode={me.user.mfaEnabled} />
       <Card>
         <div className="mb-1 font-semibold">{t('privacy.title')}</div>
         <p className="mb-3 text-sm text-ink-soft">{t('privacy.text')}</p>
@@ -104,9 +104,9 @@ export default function Settings() {
 }
 
 /** Change my own password: the current one first. Other browsers are logged out, this one stays. */
-function PasswordCard() {
+function PasswordCard({ needsCode }: { needsCode: boolean }) {
   const { t } = useI18n();
-  const empty = { currentPassword: '', newPassword: '', repeat: '' };
+  const empty = { currentPassword: '', newPassword: '', repeat: '', mfaCode: '' };
   const [f, setF] = useState(empty);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -120,7 +120,11 @@ function PasswordCard() {
     try {
       await api('/api/auth/change-password', {
         method: 'POST',
-        body: { currentPassword: f.currentPassword, newPassword: f.newPassword },
+        body: {
+          currentPassword: f.currentPassword,
+          newPassword: f.newPassword,
+          ...(needsCode ? { mfaCode: f.mfaCode } : {}),
+        },
       });
       setF(empty);
       setDone(true);
@@ -138,7 +142,9 @@ function PasswordCard() {
       <input
         id={`pw-${k}`}
         className="input"
-        type="password"
+        type={k === 'mfaCode' ? 'text' : 'password'}
+        inputMode={k === 'mfaCode' ? 'numeric' : undefined}
+        maxLength={k === 'mfaCode' ? 6 : undefined}
         autoComplete={autoComplete}
         value={f[k]}
         onChange={(e) => (setF({ ...f, [k]: e.target.value }), setDone(false))}
@@ -155,13 +161,18 @@ function PasswordCard() {
         {field('currentPassword', 'settings.currentPassword', 'current-password')}
         {field('newPassword', 'settings.newPassword', 'new-password')}
         {field('repeat', 'settings.repeatPassword', 'new-password')}
+        {needsCode && field('mfaCode', 'settings.mfaCode', 'one-time-code')}
         {mismatch && <p className="text-sm text-red-700">{t('settings.passwordMismatch')}</p>}
         <ErrorText error={error} />
         {done && <Alert tone="green" title={t('settings.passwordChangedHere')} />}
         <button
           className="btn-primary"
           disabled={
-            busy || !f.currentPassword || f.newPassword.length < 12 || f.repeat !== f.newPassword
+            busy ||
+            !f.currentPassword ||
+            f.newPassword.length < 12 ||
+            f.repeat !== f.newPassword ||
+            (needsCode && !/^\d{6}$/.test(f.mfaCode))
           }
         >
           {t('settings.changePassword')}

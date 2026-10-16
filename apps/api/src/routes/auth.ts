@@ -147,6 +147,10 @@ export function authRoutes(app: FastifyInstance, ctx: Ctx) {
         z.object({
           currentPassword: z.string().min(1).max(200),
           newPassword: z.string().min(12).max(200),
+          mfaCode: z
+            .string()
+            .regex(/^\d{6}$/)
+            .optional(),
         }),
         req.body,
       );

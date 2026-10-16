@@ -356,12 +356,21 @@ export async function resetPassword(ctx: Ctx, token: string, password: string) {
 export async function changePassword(
   ctx: Ctx,
   session: SessionInfo,
-  input: { currentPassword: string; newPassword: string },
+  input: { currentPassword: string; newPassword: string; mfaCode?: string },
 ) {
   const [u] = await ctx.db.select().from(users).where(eq(users.id, session.user.id));
   if (!u || !(await verify(u.passwordHash, input.currentPassword))) {
     await audit(ctx.db, { userId: session.user.id }, 'auth.password_change_failed');
     throw badRequest('wrong_password', 'Your current password is wrong');
+  }
+  // With two-step login on, the code from the authenticator app is needed too
+  if (u.mfaEnabled) {
+    if (!input.mfaCode)
+      throw badRequest('mfa_required', 'Enter the 6-digit code from your authenticator app');
+    if (!u.mfaSecret || !verifyTotp(u.mfaSecret, input.mfaCode, ctx.now().getTime())) {
+      await audit(ctx.db, { userId: u.id }, 'auth.mfa_failed');
+      throw badRequest('mfa_wrong', 'The code is wrong or too old');
+    }
   }
   if (input.newPassword.length < 12) throw badRequest('weak_password', 'At least 12 characters');
   if (input.newPassword === input.currentPassword)

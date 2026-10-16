@@ -882,6 +882,8 @@ export const fr: Messages = {
   'settings.repeatPassword': 'Répétez le nouveau mot de passe',
   'settings.passwordMismatch': 'Les deux nouveaux mots de passe ne sont pas identiques',
   'settings.changePassword': 'Changer le mot de passe',
+  'settings.mfaCode': "Code de votre application d'authentification",
+  'error.mfa_required': "Saisissez le code à 6 chiffres de votre application d'authentification",
   'settings.passwordChangedHere': 'Votre mot de passe a été changé',
   'error.wrong_password': 'Votre mot de passe actuel est incorrect',
   'error.same_password': "Choisissez un mot de passe différent de l'actuel",

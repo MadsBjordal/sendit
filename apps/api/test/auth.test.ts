@@ -144,6 +144,29 @@ describe('changing my password', () => {
     ).toBe(200);
   });
 
+  it('asks for the authenticator code when two-step login is on', async () => {
+    const email = `staff-pw-${Date.now()}@example.com`;
+    const admin = await ensurePlatformAdmin(env.ctx.db, email, 'admin password long enough');
+    const c = new Client(env);
+    const code = () => totp(admin.mfaSecret, env.clock.now.getTime());
+    await c.post('/api/auth/login', {
+      email,
+      password: 'admin password long enough',
+      mfaCode: code(),
+    });
+    const body = {
+      currentPassword: 'admin password long enough',
+      newPassword: 'another long password',
+    };
+    expect((await c.post('/api/auth/change-password', body)).data.error).toBe('mfa_required');
+    expect(
+      (await c.post('/api/auth/change-password', { ...body, mfaCode: '000000' })).data.error,
+    ).toBe('mfa_wrong');
+    expect(
+      (await c.post('/api/auth/change-password', { ...body, mfaCode: code() })).statusCode,
+    ).toBe(200);
+  });
+
   it('is refused when not logged in', async () => {
     const res = await new Client(env).post('/api/auth/change-password', {
       currentPassword: 'x',
