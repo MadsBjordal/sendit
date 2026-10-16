@@ -37,8 +37,12 @@ const NAV: Record<string, Array<{ href: string; key: MessageKey }>> = {
     { href: '/invoices', key: 'nav.invoices' },
     { href: '/team', key: 'nav.team' },
     { href: '/support', key: 'nav.support' },
+    { href: '/settings', key: 'nav.settings' },
   ],
-  staff: [{ href: '/admin', key: 'nav.admin' }],
+  staff: [
+    { href: '/admin', key: 'nav.admin' },
+    { href: '/settings', key: 'nav.settings' },
+  ],
 };
 
 export function LanguageSelect() {

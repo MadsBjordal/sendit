@@ -1,5 +1,5 @@
 import { hash, verify } from '@node-rs/argon2';
-import { and, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import type { MemberRole, RegisterInput } from '@freight/shared';
 import type { Ctx } from '../context';
 import type { DbOrTx } from '../db/client';
@@ -349,6 +349,39 @@ export async function resetPassword(ctx: Ctx, token: string, password: string) {
       .set({ revokedAt: ctx.now() })
       .where(and(eq(sessions.userId, t.userId), isNull(sessions.revokedAt)));
     await audit(tx, { userId: t.userId }, 'auth.password_reset');
+  });
+}
+
+/** A logged-in person changes their own password. Their other sessions end; this one stays. */
+export async function changePassword(
+  ctx: Ctx,
+  session: SessionInfo,
+  input: { currentPassword: string; newPassword: string },
+) {
+  const [u] = await ctx.db.select().from(users).where(eq(users.id, session.user.id));
+  if (!u || !(await verify(u.passwordHash, input.currentPassword))) {
+    await audit(ctx.db, { userId: session.user.id }, 'auth.password_change_failed');
+    throw badRequest('wrong_password', 'Your current password is wrong');
+  }
+  if (input.newPassword.length < 12) throw badRequest('weak_password', 'At least 12 characters');
+  if (input.newPassword === input.currentPassword)
+    throw badRequest('same_password', 'Choose a password different from the current one');
+  await ctx.db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({ passwordHash: await hashPassword(input.newPassword) })
+      .where(eq(users.id, u.id));
+    await tx
+      .update(sessions)
+      .set({ revokedAt: ctx.now() })
+      .where(
+        and(
+          eq(sessions.userId, u.id),
+          isNull(sessions.revokedAt),
+          ne(sessions.id, session.sessionId),
+        ),
+      );
+    await audit(tx, { userId: u.id }, 'auth.password_changed');
   });
 }
 

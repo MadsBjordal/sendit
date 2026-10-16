@@ -863,4 +863,16 @@ export const de: Messages = {
   'perf.trackingHint': 'Aufträge mit geteiltem Live-Standort während der Fahrt.',
   'perf.claims': 'Reklamationen',
   'perf.claimsHint': 'Zustellungen, bei denen ein Streitfall mit einem Abzug endete.',
+  // --- change password
+  'settings.password': 'Passwort',
+  'settings.passwordText':
+    'Ihr aktuelles Passwort wird benötigt. Andere Browser und Geräte, auf denen Sie angemeldet sind, werden abgemeldet; dieser bleibt angemeldet.',
+  'settings.currentPassword': 'Aktuelles Passwort',
+  'settings.newPassword': 'Neues Passwort (mindestens 12 Zeichen)',
+  'settings.repeatPassword': 'Neues Passwort wiederholen',
+  'settings.passwordMismatch': 'Die beiden neuen Passwörter stimmen nicht überein',
+  'settings.changePassword': 'Passwort ändern',
+  'settings.passwordChangedHere': 'Ihr Passwort wurde geändert',
+  'error.wrong_password': 'Ihr aktuelles Passwort ist falsch',
+  'error.same_password': 'Wählen Sie ein anderes Passwort als das aktuelle',
 };

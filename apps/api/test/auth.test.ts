@@ -107,6 +107,52 @@ describe('registration and login', () => {
   });
 });
 
+describe('changing my password', () => {
+  it('needs the current password; logs out my other browsers but keeps this one', async () => {
+    const { client, email } = await registerCompany(env, 'shipper');
+    const other = new Client(env);
+    await other.post('/api/auth/login', { email, password: 'correct horse battery staple' });
+    expect((await other.get('/api/auth/me')).statusCode).toBe(200);
+
+    const wrong = await client.post('/api/auth/change-password', {
+      currentPassword: 'not my password',
+      newPassword: 'a brand new long password',
+    });
+    expect(wrong.data.error).toBe('wrong_password');
+    const same = await client.post('/api/auth/change-password', {
+      currentPassword: 'correct horse battery staple',
+      newPassword: 'correct horse battery staple',
+    });
+    expect(same.data.error).toBe('same_password');
+
+    const ok = await client.post('/api/auth/change-password', {
+      currentPassword: 'correct horse battery staple',
+      newPassword: 'a brand new long password',
+    });
+    expect(ok.statusCode).toBe(200);
+    expect((await client.get('/api/auth/me')).statusCode).toBe(200);
+    expect((await other.get('/api/auth/me')).statusCode).toBe(401);
+
+    const fresh = new Client(env);
+    expect(
+      (await fresh.post('/api/auth/login', { email, password: 'correct horse battery staple' }))
+        .statusCode,
+    ).toBe(401);
+    expect(
+      (await fresh.post('/api/auth/login', { email, password: 'a brand new long password' }))
+        .statusCode,
+    ).toBe(200);
+  });
+
+  it('is refused when not logged in', async () => {
+    const res = await new Client(env).post('/api/auth/change-password', {
+      currentPassword: 'x',
+      newPassword: 'a brand new long password',
+    });
+    expect(res.statusCode).toBe(401);
+  });
+});
+
 describe('members and roles', () => {
   it('an owner invites a colleague; the role limits what they can do', async () => {
     const owner = await registerCompany(env, 'shipper');

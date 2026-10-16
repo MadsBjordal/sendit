@@ -19,7 +19,7 @@ delivery flow were run on the built apps during milestones 2–6.
 | Monorepo, TypeScript, lint, format, CI          | ✅    | GitHub Actions with PostGIS service, `pnpm audit`, driver-app job   |
 | Database + migrations (PostgreSQL 16 + PostGIS) | ✅    | 10 migrations; append-only and balancing triggers                   |
 | Registration, login, logout, sessions           | ✅    | Argon2id, lockout, same answer for unknown email                    |
-| Email verification, password reset              | ✅    | Sent through SMTP when configured, else written to the log          |
+| Email verification, password reset and change   | ✅    | Change in Settings needs the current password; other sessions end   |
 | Two-step login (TOTP) for platform staff        | ✅    | Required for every admin action                                     |
 | Organisations, members, invitations, roles      | ✅    | Owner/admin/dispatcher/finance/member/driver                        |
 | Rate limiting, CSRF, security headers, CSP      | ✅    | CSP still allows inline scripts (Next.js needs them, see SECURITY)  |

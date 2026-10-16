@@ -859,4 +859,16 @@ export const it: Messages = {
   'perf.trackingHint': 'Incarichi con posizione condivisa durante il viaggio.',
   'perf.claims': 'Reclami',
   'perf.claimsHint': 'Consegne in cui una contestazione si è chiusa con una trattenuta.',
+  // --- change password
+  'settings.password': 'Password',
+  'settings.passwordText':
+    'Serve la password attuale. Gli altri browser e dispositivi collegati vengono disconnessi; questo resta collegato.',
+  'settings.currentPassword': 'Password attuale',
+  'settings.newPassword': 'Nuova password (almeno 12 caratteri)',
+  'settings.repeatPassword': 'Ripeti la nuova password',
+  'settings.passwordMismatch': 'Le due nuove password non coincidono',
+  'settings.changePassword': 'Cambia password',
+  'settings.passwordChangedHere': 'La password è stata cambiata',
+  'error.wrong_password': 'La password attuale è errata',
+  'error.same_password': 'Scegli una password diversa da quella attuale',
 };

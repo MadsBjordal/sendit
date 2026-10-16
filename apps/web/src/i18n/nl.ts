@@ -857,4 +857,16 @@ export const nl: Messages = {
   'perf.trackingHint': 'Ritten met gedeelde locatie tijdens de rit.',
   'perf.claims': 'Claims',
   'perf.claimsHint': 'Leveringen waarbij een geschil eindigde met een inhouding.',
+  // --- change password
+  'settings.password': 'Wachtwoord',
+  'settings.passwordText':
+    'Je huidige wachtwoord is nodig. Andere browsers en apparaten waarop je bent ingelogd worden uitgelogd; deze blijft ingelogd.',
+  'settings.currentPassword': 'Huidig wachtwoord',
+  'settings.newPassword': 'Nieuw wachtwoord (minstens 12 tekens)',
+  'settings.repeatPassword': 'Nieuw wachtwoord herhalen',
+  'settings.passwordMismatch': 'De twee nieuwe wachtwoorden zijn niet gelijk',
+  'settings.changePassword': 'Wachtwoord wijzigen',
+  'settings.passwordChangedHere': 'Je wachtwoord is gewijzigd',
+  'error.wrong_password': 'Je huidige wachtwoord klopt niet',
+  'error.same_password': 'Kies een ander wachtwoord dan het huidige',
 };

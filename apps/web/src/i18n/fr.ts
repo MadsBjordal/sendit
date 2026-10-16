@@ -873,4 +873,16 @@ export const fr: Messages = {
   'perf.trackingHint': 'Missions avec position partagée pendant le trajet.',
   'perf.claims': 'Réclamations',
   'perf.claimsHint': "Livraisons dont le litige s'est terminé par une retenue.",
+  // --- change password
+  'settings.password': 'Mot de passe',
+  'settings.passwordText':
+    'Votre mot de passe actuel est nécessaire. Les autres navigateurs et appareils connectés sont déconnectés ; celui-ci reste connecté.',
+  'settings.currentPassword': 'Mot de passe actuel',
+  'settings.newPassword': 'Nouveau mot de passe (au moins 12 caractères)',
+  'settings.repeatPassword': 'Répétez le nouveau mot de passe',
+  'settings.passwordMismatch': 'Les deux nouveaux mots de passe ne sont pas identiques',
+  'settings.changePassword': 'Changer le mot de passe',
+  'settings.passwordChangedHere': 'Votre mot de passe a été changé',
+  'error.wrong_password': 'Votre mot de passe actuel est incorrect',
+  'error.same_password': "Choisissez un mot de passe différent de l'actuel",
 };

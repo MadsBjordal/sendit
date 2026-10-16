@@ -139,6 +139,23 @@ export function authRoutes(app: FastifyInstance, ctx: Ctx) {
   });
 
   app.post(
+    '/api/auth/change-password',
+    { ...strict, schema: { tags: ['auth'], summary: 'Change my password (current one needed)' } },
+    async (req) => {
+      if (!req.session) throw unauthorised();
+      const input = parse(
+        z.object({
+          currentPassword: z.string().min(1).max(200),
+          newPassword: z.string().min(12).max(200),
+        }),
+        req.body,
+      );
+      await auth.changePassword(ctx, req.session, input);
+      return { ok: true };
+    },
+  );
+
+  app.post(
     '/api/auth/mfa/setup',
     { schema: { tags: ['auth'], summary: 'Start two-step login setup (authenticator app)' } },
     async (req) => {

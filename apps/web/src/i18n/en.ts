@@ -842,6 +842,18 @@ export const en = {
   'perf.trackingHint': 'Jobs with live location shared during the trip.',
   'perf.claims': 'Claims',
   'perf.claimsHint': 'Deliveries where a dispute ended with a deduction.',
+  // --- change password
+  'settings.password': 'Password',
+  'settings.passwordText':
+    'Your current password is needed. Other browsers and devices where you are logged in are logged out; this one stays logged in.',
+  'settings.currentPassword': 'Current password',
+  'settings.newPassword': 'New password (at least 12 characters)',
+  'settings.repeatPassword': 'New password again',
+  'settings.passwordMismatch': 'The two new passwords are not the same',
+  'settings.changePassword': 'Change password',
+  'settings.passwordChangedHere': 'Your password has been changed',
+  'error.wrong_password': 'Your current password is wrong',
+  'error.same_password': 'Choose a password different from the current one',
 };
 
 export type MessageKey = keyof typeof en;

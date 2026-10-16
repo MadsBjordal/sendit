@@ -854,4 +854,16 @@ export const pl: Messages = {
   'perf.trackingHint': 'Zlecenia z udostępnioną lokalizacją podczas trasy.',
   'perf.claims': 'Reklamacje',
   'perf.claimsHint': 'Dostawy, w których spór zakończył się potrąceniem.',
+  // --- change password
+  'settings.password': 'Hasło',
+  'settings.passwordText':
+    'Potrzebne jest obecne hasło. Inne przeglądarki i urządzenia, na których jesteś zalogowany, zostaną wylogowane; ta pozostaje zalogowana.',
+  'settings.currentPassword': 'Obecne hasło',
+  'settings.newPassword': 'Nowe hasło (co najmniej 12 znaków)',
+  'settings.repeatPassword': 'Powtórz nowe hasło',
+  'settings.passwordMismatch': 'Nowe hasła nie są takie same',
+  'settings.changePassword': 'Zmień hasło',
+  'settings.passwordChangedHere': 'Hasło zostało zmienione',
+  'error.wrong_password': 'Obecne hasło jest nieprawidłowe',
+  'error.same_password': 'Wybierz hasło inne niż obecne',
 };
