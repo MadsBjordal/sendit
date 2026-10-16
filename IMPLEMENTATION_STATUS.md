@@ -14,17 +14,17 @@ delivery flow were run on the built apps during milestones 2–6.
 
 ## Phase 1: Foundation
 
-| Module                                          | State | Notes                                                               |
-| ----------------------------------------------- | ----- | ------------------------------------------------------------------- |
-| Monorepo, TypeScript, lint, format, CI          | ✅    | GitHub Actions with PostGIS service, `pnpm audit`, driver-app job   |
-| Database + migrations (PostgreSQL 16 + PostGIS) | ✅    | 10 migrations; append-only and balancing triggers                   |
-| Registration, login, logout, sessions           | ✅    | Argon2id, lockout, same answer for unknown email                    |
-| Email verification, password reset and change   | ✅    | Change in Settings needs the current password; other sessions end   |
-| Two-step login (TOTP) for platform staff        | ✅    | Required for every admin action                                     |
-| Organisations, members, invitations, roles      | ✅    | Owner/admin/dispatcher/finance/member/driver                        |
-| Rate limiting, CSRF, security headers, CSP      | ✅    | CSP still allows inline scripts (Next.js needs them, see SECURITY)  |
-| Design system + responsive shell                | ✅    | Tailwind; brand colours as variables                                |
-| 7 languages                                     | 🟡    | All texts in all 7; translations AI-written, need native review (⚠) |
+| Module                                          | State | Notes                                                                                           |
+| ----------------------------------------------- | ----- | ----------------------------------------------------------------------------------------------- |
+| Monorepo, TypeScript, lint, format, CI          | ✅    | GitHub Actions with PostGIS service, `pnpm audit`, driver-app job                               |
+| Database + migrations (PostgreSQL 16 + PostGIS) | ✅    | 10 migrations; append-only and balancing triggers                                               |
+| Registration, login, logout, sessions           | ✅    | Argon2id, lockout, same answer for unknown email                                                |
+| Email verification, password reset and change   | ✅    | Change in Settings needs the current password and the 2-step code (when on); other sessions end |
+| Two-step login (TOTP) for platform staff        | ✅    | Required for every admin action                                                                 |
+| Organisations, members, invitations, roles      | ✅    | Owner/admin/dispatcher/finance/member/driver                                                    |
+| Rate limiting, CSRF, security headers, CSP      | ✅    | CSP still allows inline scripts (Next.js needs them, see SECURITY)                              |
+| Design system + responsive shell                | ✅    | Tailwind; brand colours as variables                                                            |
+| 7 languages                                     | 🟡    | All texts in all 7; translations AI-written, need native review (⚠)                             |
 
 ## Phase 2: Core marketplace
 
