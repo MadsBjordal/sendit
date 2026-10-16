@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: freight
       POSTGRES_DB: freight
     ports:
-      - '5434:5432'
+      - '55432:5432'
     volumes:
       - freight-db:/var/lib/postgresql/data
       - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
